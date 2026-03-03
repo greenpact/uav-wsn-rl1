@@ -1,0 +1,4 @@
+#!/bin/sh
+cd `dirname $0`
+../src/uav_wsn_rl1 -n .:../src $*
+# for shared lib, use: opp_run -l ../src/uav_wsn_rl1 -n .:../src $*

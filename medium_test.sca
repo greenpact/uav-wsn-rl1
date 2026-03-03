@@ -1,0 +1,90 @@
+version 3
+run General-0-20260303-18:31:00-190282
+attr configname General
+attr datetime 20260303-18:31:00
+attr datetimef 20260303-183100
+attr experiment General
+attr inifile omnetpp_medium.ini
+attr iterationvars ""
+attr iterationvarsd ""
+attr iterationvarsf ""
+attr measurement ""
+attr network src.TestMedium
+attr processid 190282
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+config network src.TestMedium
+config sim-time-limit 1s
+config ned-path .:src:/home/wte/uavwsn-rl/inet/src
+config load-libs /home/wte/uavwsn-rl/inet/out/clang-release/src/libINET.so
+config output-scalar-file medium_test.sca
+config output-vector-file medium_test.vec
+config record-eventlog false
+
+par TestMedium.radioMedium.propagation typename "\"inet.physicallayer.wireless.common.propagation.ConstantSpeedPropagation\""
+par TestMedium.radioMedium.propagation propagationSpeed 2.99792e+08mps
+attr unit mps
+par TestMedium.radioMedium.propagation ignoreMovementDuringTransmission true
+par TestMedium.radioMedium.propagation ignoreMovementDuringPropagation true
+par TestMedium.radioMedium.propagation ignoreMovementDuringReception true
+scalar TestMedium.radioMedium.propagation "Arrival computation count" 0
+par TestMedium.radioMedium.analogModel typename "\"inet.physicallayer.wireless.unitdisk.UnitDiskAnalogModel\""
+par TestMedium.radioMedium.pathLoss typename "\"inet.physicallayer.wireless.common.pathloss.FreeSpacePathLoss\""
+par TestMedium.radioMedium.pathLoss alpha 2
+par TestMedium.radioMedium.pathLoss systemLoss 0dB
+attr unit dB
+par TestMedium.radioMedium.mediumLimitCache typename "\"inet.physicallayer.wireless.common.medium.MediumLimitCache\""
+par TestMedium.radioMedium.mediumLimitCache centerFrequency "nan Hz"
+attr unit Hz
+par TestMedium.radioMedium.mediumLimitCache maxSpeed "nan mps"
+attr unit mps
+par TestMedium.radioMedium.mediumLimitCache maxTransmissionPower "nan W"
+attr unit W
+par TestMedium.radioMedium.mediumLimitCache minInterferencePower "nan dBm"
+attr unit dBm
+par TestMedium.radioMedium.mediumLimitCache minReceptionPower "nan dBm"
+attr unit dBm
+par TestMedium.radioMedium.mediumLimitCache maxAntennaGain 0dB
+attr unit dB
+par TestMedium.radioMedium.mediumLimitCache minInterferenceTime 1e-12s
+attr unit s
+par TestMedium.radioMedium.mediumLimitCache maxTransmissionDuration 0.01s
+attr unit s
+par TestMedium.radioMedium.mediumLimitCache maxCommunicationRange "nan m"
+attr unit m
+par TestMedium.radioMedium.mediumLimitCache maxInterferenceRange "nan m"
+attr unit m
+par TestMedium.radioMedium.communicationCache typename "\"inet.physicallayer.wireless.common.communicationcache.VectorCommunicationCache\""
+par TestMedium.radioMedium typename "\"inet.physicallayer.wireless.unitdisk.UnitDiskRadioMedium\""
+par TestMedium.radioMedium physicalEnvironmentModule "\"physicalEnvironment\""
+par TestMedium.radioMedium signalAnalogRepresentation "\"unitDisk\""
+attr enum unitDisk,scalar,dimensional
+par TestMedium.radioMedium rangeFilter "\"\""
+par TestMedium.radioMedium radioModeFilter false
+par TestMedium.radioMedium listeningFilter false
+par TestMedium.radioMedium macAddressFilter false
+par TestMedium.radioMedium recordTransmissionLog false
+par TestMedium.radioMedium recordReceptionLog false
+scalar TestMedium.radioMedium "transmission count" 0
+scalar TestMedium.radioMedium "signal send count" 0
+scalar TestMedium.radioMedium "reception computation count" 0
+scalar TestMedium.radioMedium "interference computation count" 0
+scalar TestMedium.radioMedium "reception decision computation count" 0
+scalar TestMedium.radioMedium "listening decision computation count" 0
+scalar TestMedium.radioMedium "reception cache hit" -nan
+attr unit %
+scalar TestMedium.radioMedium "interference cache hit" -nan
+attr unit %
+scalar TestMedium.radioMedium "noise cache hit" -nan
+attr unit %
+scalar TestMedium.radioMedium "snir cache hit" -nan
+attr unit %
+scalar TestMedium.radioMedium "reception decision cache hit" -nan
+attr unit %
+scalar TestMedium.radioMedium "reception result cache hit" -nan
+attr unit %
+par TestMedium typename "\"src.TestMedium\""
+
