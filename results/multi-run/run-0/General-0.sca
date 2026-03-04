@@ -1,0 +1,449 @@
+version 3
+run General-0-20260304-12:48:46-215206
+attr configname General
+attr datetime 20260304-12:48:46
+attr datetimef 20260304-124846
+attr experiment General
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsd ""
+attr iterationvarsf ""
+attr measurement ""
+attr network src.UavWsnNetwork
+attr processid 215206
+attr repetition 0
+attr replication #0
+attr resultdir results/multi-run/run-0
+attr runnumber 0
+attr seedset 0
+config network src.UavWsnNetwork
+config sim-time-limit 1000s
+config ned-path .:src
+config *.numNodes 400
+config *.areaX 1000
+config *.areaY 1000
+config **.sensors[*].initialEnergy 0.5
+config **.sensors[*].controlPacketSize 200
+config **.sensors[*].dataPacketSize 2000
+config **.sensors[*].eElec 50e-9
+config **.sensors[*].eFreeSpace 10e-12
+config **.sensors[*].eMultiPath 0.0013e-12
+config **.sensors[*].idleListeningPower 1.84e-5
+config **.sensors[*].commRadius 100
+config *.bs.commRadius 250
+config *.bs.xPos -200
+config *.bs.yPos 500
+config *.uav.uavHeight 30
+config *.uav.minSpeed 10
+config *.uav.maxSpeed 10
+config *.uav.commRadius 192
+config **.scalar-recording true
+config **.vector-recording false
+config output-scalar-file results/multi-run/run-0/General-0.sca
+config output-vector-file results/multi-run/run-0/General-0.vec
+config result-dir results/multi-run/run-0
+
+scalar UavWsnNetwork.radioMedium neighbors-0 8
+scalar UavWsnNetwork.radioMedium neighbors-1 14
+scalar UavWsnNetwork.radioMedium neighbors-2 17
+scalar UavWsnNetwork.radioMedium neighbors-3 11
+scalar UavWsnNetwork.radioMedium neighbors-4 11
+scalar UavWsnNetwork.radioMedium neighbors-5 20
+scalar UavWsnNetwork.radioMedium neighbors-6 6
+scalar UavWsnNetwork.radioMedium neighbors-7 10
+scalar UavWsnNetwork.radioMedium neighbors-8 13
+scalar UavWsnNetwork.radioMedium neighbors-9 19
+scalar UavWsnNetwork.radioMedium neighbors-10 15
+scalar UavWsnNetwork.radioMedium neighbors-11 18
+scalar UavWsnNetwork.radioMedium neighbors-12 12
+scalar UavWsnNetwork.radioMedium neighbors-13 8
+scalar UavWsnNetwork.radioMedium neighbors-14 11
+scalar UavWsnNetwork.radioMedium neighbors-15 13
+scalar UavWsnNetwork.radioMedium neighbors-16 7
+scalar UavWsnNetwork.radioMedium neighbors-17 7
+scalar UavWsnNetwork.radioMedium neighbors-18 8
+scalar UavWsnNetwork.radioMedium neighbors-19 9
+scalar UavWsnNetwork.radioMedium neighbors-20 7
+scalar UavWsnNetwork.radioMedium neighbors-21 13
+scalar UavWsnNetwork.radioMedium neighbors-22 16
+scalar UavWsnNetwork.radioMedium neighbors-23 8
+scalar UavWsnNetwork.radioMedium neighbors-24 18
+scalar UavWsnNetwork.radioMedium neighbors-25 13
+scalar UavWsnNetwork.radioMedium neighbors-26 8
+scalar UavWsnNetwork.radioMedium neighbors-27 9
+scalar UavWsnNetwork.radioMedium neighbors-28 13
+scalar UavWsnNetwork.radioMedium neighbors-29 14
+scalar UavWsnNetwork.radioMedium neighbors-30 13
+scalar UavWsnNetwork.radioMedium neighbors-31 11
+scalar UavWsnNetwork.radioMedium neighbors-32 8
+scalar UavWsnNetwork.radioMedium neighbors-33 14
+scalar UavWsnNetwork.radioMedium neighbors-34 7
+scalar UavWsnNetwork.radioMedium neighbors-35 13
+scalar UavWsnNetwork.radioMedium neighbors-36 10
+scalar UavWsnNetwork.radioMedium neighbors-37 16
+scalar UavWsnNetwork.radioMedium neighbors-38 8
+scalar UavWsnNetwork.radioMedium neighbors-39 14
+scalar UavWsnNetwork.radioMedium neighbors-40 11
+scalar UavWsnNetwork.radioMedium neighbors-41 12
+scalar UavWsnNetwork.radioMedium neighbors-42 12
+scalar UavWsnNetwork.radioMedium neighbors-43 6
+scalar UavWsnNetwork.radioMedium neighbors-44 15
+scalar UavWsnNetwork.radioMedium neighbors-45 8
+scalar UavWsnNetwork.radioMedium neighbors-46 13
+scalar UavWsnNetwork.radioMedium neighbors-47 15
+scalar UavWsnNetwork.radioMedium neighbors-48 8
+scalar UavWsnNetwork.radioMedium neighbors-49 7
+scalar UavWsnNetwork.radioMedium neighbors-50 10
+scalar UavWsnNetwork.radioMedium neighbors-51 12
+scalar UavWsnNetwork.radioMedium neighbors-52 4
+scalar UavWsnNetwork.radioMedium neighbors-53 15
+scalar UavWsnNetwork.radioMedium neighbors-54 10
+scalar UavWsnNetwork.radioMedium neighbors-55 8
+scalar UavWsnNetwork.radioMedium neighbors-56 12
+scalar UavWsnNetwork.radioMedium neighbors-57 14
+scalar UavWsnNetwork.radioMedium neighbors-58 16
+scalar UavWsnNetwork.radioMedium neighbors-59 9
+scalar UavWsnNetwork.radioMedium neighbors-60 12
+scalar UavWsnNetwork.radioMedium neighbors-61 16
+scalar UavWsnNetwork.radioMedium neighbors-62 11
+scalar UavWsnNetwork.radioMedium neighbors-63 10
+scalar UavWsnNetwork.radioMedium neighbors-64 12
+scalar UavWsnNetwork.radioMedium neighbors-65 15
+scalar UavWsnNetwork.radioMedium neighbors-66 8
+scalar UavWsnNetwork.radioMedium neighbors-67 10
+scalar UavWsnNetwork.radioMedium neighbors-68 7
+scalar UavWsnNetwork.radioMedium neighbors-69 8
+scalar UavWsnNetwork.radioMedium neighbors-70 6
+scalar UavWsnNetwork.radioMedium neighbors-71 17
+scalar UavWsnNetwork.radioMedium neighbors-72 6
+scalar UavWsnNetwork.radioMedium neighbors-73 17
+scalar UavWsnNetwork.radioMedium neighbors-74 8
+scalar UavWsnNetwork.radioMedium neighbors-75 9
+scalar UavWsnNetwork.radioMedium neighbors-76 9
+scalar UavWsnNetwork.radioMedium neighbors-77 12
+scalar UavWsnNetwork.radioMedium neighbors-78 15
+scalar UavWsnNetwork.radioMedium neighbors-79 19
+scalar UavWsnNetwork.radioMedium neighbors-80 12
+scalar UavWsnNetwork.radioMedium neighbors-81 12
+scalar UavWsnNetwork.radioMedium neighbors-82 9
+scalar UavWsnNetwork.radioMedium neighbors-83 13
+scalar UavWsnNetwork.radioMedium neighbors-84 11
+scalar UavWsnNetwork.radioMedium neighbors-85 13
+scalar UavWsnNetwork.radioMedium neighbors-86 14
+scalar UavWsnNetwork.radioMedium neighbors-87 9
+scalar UavWsnNetwork.radioMedium neighbors-88 16
+scalar UavWsnNetwork.radioMedium neighbors-89 13
+scalar UavWsnNetwork.radioMedium neighbors-90 4
+scalar UavWsnNetwork.radioMedium neighbors-91 14
+scalar UavWsnNetwork.radioMedium neighbors-92 12
+scalar UavWsnNetwork.radioMedium neighbors-93 14
+scalar UavWsnNetwork.radioMedium neighbors-94 9
+scalar UavWsnNetwork.radioMedium neighbors-95 14
+scalar UavWsnNetwork.radioMedium neighbors-96 13
+scalar UavWsnNetwork.radioMedium neighbors-97 4
+scalar UavWsnNetwork.radioMedium neighbors-98 12
+scalar UavWsnNetwork.radioMedium neighbors-99 4
+scalar UavWsnNetwork.radioMedium neighbors-100 15
+scalar UavWsnNetwork.radioMedium neighbors-101 13
+scalar UavWsnNetwork.radioMedium neighbors-102 10
+scalar UavWsnNetwork.radioMedium neighbors-103 9
+scalar UavWsnNetwork.radioMedium neighbors-104 13
+scalar UavWsnNetwork.radioMedium neighbors-105 12
+scalar UavWsnNetwork.radioMedium neighbors-106 14
+scalar UavWsnNetwork.radioMedium neighbors-107 12
+scalar UavWsnNetwork.radioMedium neighbors-108 14
+scalar UavWsnNetwork.radioMedium neighbors-109 5
+scalar UavWsnNetwork.radioMedium neighbors-110 17
+scalar UavWsnNetwork.radioMedium neighbors-111 4
+scalar UavWsnNetwork.radioMedium neighbors-112 10
+scalar UavWsnNetwork.radioMedium neighbors-113 10
+scalar UavWsnNetwork.radioMedium neighbors-114 11
+scalar UavWsnNetwork.radioMedium neighbors-115 13
+scalar UavWsnNetwork.radioMedium neighbors-116 13
+scalar UavWsnNetwork.radioMedium neighbors-117 12
+scalar UavWsnNetwork.radioMedium neighbors-118 6
+scalar UavWsnNetwork.radioMedium neighbors-119 10
+scalar UavWsnNetwork.radioMedium neighbors-120 12
+scalar UavWsnNetwork.radioMedium neighbors-121 16
+scalar UavWsnNetwork.radioMedium neighbors-122 11
+scalar UavWsnNetwork.radioMedium neighbors-123 19
+scalar UavWsnNetwork.radioMedium neighbors-124 12
+scalar UavWsnNetwork.radioMedium neighbors-125 18
+scalar UavWsnNetwork.radioMedium neighbors-126 7
+scalar UavWsnNetwork.radioMedium neighbors-127 11
+scalar UavWsnNetwork.radioMedium neighbors-128 10
+scalar UavWsnNetwork.radioMedium neighbors-129 14
+scalar UavWsnNetwork.radioMedium neighbors-130 10
+scalar UavWsnNetwork.radioMedium neighbors-131 10
+scalar UavWsnNetwork.radioMedium neighbors-132 9
+scalar UavWsnNetwork.radioMedium neighbors-133 9
+scalar UavWsnNetwork.radioMedium neighbors-134 11
+scalar UavWsnNetwork.radioMedium neighbors-135 13
+scalar UavWsnNetwork.radioMedium neighbors-136 9
+scalar UavWsnNetwork.radioMedium neighbors-137 5
+scalar UavWsnNetwork.radioMedium neighbors-138 11
+scalar UavWsnNetwork.radioMedium neighbors-139 7
+scalar UavWsnNetwork.radioMedium neighbors-140 11
+scalar UavWsnNetwork.radioMedium neighbors-141 7
+scalar UavWsnNetwork.radioMedium neighbors-142 8
+scalar UavWsnNetwork.radioMedium neighbors-143 14
+scalar UavWsnNetwork.radioMedium neighbors-144 8
+scalar UavWsnNetwork.radioMedium neighbors-145 13
+scalar UavWsnNetwork.radioMedium neighbors-146 7
+scalar UavWsnNetwork.radioMedium neighbors-147 12
+scalar UavWsnNetwork.radioMedium neighbors-148 13
+scalar UavWsnNetwork.radioMedium neighbors-149 6
+scalar UavWsnNetwork.radioMedium neighbors-150 12
+scalar UavWsnNetwork.radioMedium neighbors-151 7
+scalar UavWsnNetwork.radioMedium neighbors-152 9
+scalar UavWsnNetwork.radioMedium neighbors-153 10
+scalar UavWsnNetwork.radioMedium neighbors-154 12
+scalar UavWsnNetwork.radioMedium neighbors-155 8
+scalar UavWsnNetwork.radioMedium neighbors-156 11
+scalar UavWsnNetwork.radioMedium neighbors-157 13
+scalar UavWsnNetwork.radioMedium neighbors-158 6
+scalar UavWsnNetwork.radioMedium neighbors-159 7
+scalar UavWsnNetwork.radioMedium neighbors-160 13
+scalar UavWsnNetwork.radioMedium neighbors-161 13
+scalar UavWsnNetwork.radioMedium neighbors-162 9
+scalar UavWsnNetwork.radioMedium neighbors-163 11
+scalar UavWsnNetwork.radioMedium neighbors-164 4
+scalar UavWsnNetwork.radioMedium neighbors-165 12
+scalar UavWsnNetwork.radioMedium neighbors-166 7
+scalar UavWsnNetwork.radioMedium neighbors-167 11
+scalar UavWsnNetwork.radioMedium neighbors-168 12
+scalar UavWsnNetwork.radioMedium neighbors-169 11
+scalar UavWsnNetwork.radioMedium neighbors-170 17
+scalar UavWsnNetwork.radioMedium neighbors-171 10
+scalar UavWsnNetwork.radioMedium neighbors-172 12
+scalar UavWsnNetwork.radioMedium neighbors-173 4
+scalar UavWsnNetwork.radioMedium neighbors-174 10
+scalar UavWsnNetwork.radioMedium neighbors-175 14
+scalar UavWsnNetwork.radioMedium neighbors-176 10
+scalar UavWsnNetwork.radioMedium neighbors-177 7
+scalar UavWsnNetwork.radioMedium neighbors-178 10
+scalar UavWsnNetwork.radioMedium neighbors-179 8
+scalar UavWsnNetwork.radioMedium neighbors-180 8
+scalar UavWsnNetwork.radioMedium neighbors-181 9
+scalar UavWsnNetwork.radioMedium neighbors-182 9
+scalar UavWsnNetwork.radioMedium neighbors-183 6
+scalar UavWsnNetwork.radioMedium neighbors-184 14
+scalar UavWsnNetwork.radioMedium neighbors-185 11
+scalar UavWsnNetwork.radioMedium neighbors-186 12
+scalar UavWsnNetwork.radioMedium neighbors-187 10
+scalar UavWsnNetwork.radioMedium neighbors-188 7
+scalar UavWsnNetwork.radioMedium neighbors-189 9
+scalar UavWsnNetwork.radioMedium neighbors-190 7
+scalar UavWsnNetwork.radioMedium neighbors-191 12
+scalar UavWsnNetwork.radioMedium neighbors-192 11
+scalar UavWsnNetwork.radioMedium neighbors-193 7
+scalar UavWsnNetwork.radioMedium neighbors-194 15
+scalar UavWsnNetwork.radioMedium neighbors-195 8
+scalar UavWsnNetwork.radioMedium neighbors-196 10
+scalar UavWsnNetwork.radioMedium neighbors-197 7
+scalar UavWsnNetwork.radioMedium neighbors-198 3
+scalar UavWsnNetwork.radioMedium neighbors-199 17
+scalar UavWsnNetwork.radioMedium neighbors-200 12
+scalar UavWsnNetwork.radioMedium neighbors-201 4
+scalar UavWsnNetwork.radioMedium neighbors-202 12
+scalar UavWsnNetwork.radioMedium neighbors-203 9
+scalar UavWsnNetwork.radioMedium neighbors-204 5
+scalar UavWsnNetwork.radioMedium neighbors-205 18
+scalar UavWsnNetwork.radioMedium neighbors-206 14
+scalar UavWsnNetwork.radioMedium neighbors-207 11
+scalar UavWsnNetwork.radioMedium neighbors-208 7
+scalar UavWsnNetwork.radioMedium neighbors-209 7
+scalar UavWsnNetwork.radioMedium neighbors-210 6
+scalar UavWsnNetwork.radioMedium neighbors-211 17
+scalar UavWsnNetwork.radioMedium neighbors-212 16
+scalar UavWsnNetwork.radioMedium neighbors-213 8
+scalar UavWsnNetwork.radioMedium neighbors-214 8
+scalar UavWsnNetwork.radioMedium neighbors-215 13
+scalar UavWsnNetwork.radioMedium neighbors-216 14
+scalar UavWsnNetwork.radioMedium neighbors-217 13
+scalar UavWsnNetwork.radioMedium neighbors-218 13
+scalar UavWsnNetwork.radioMedium neighbors-219 9
+scalar UavWsnNetwork.radioMedium neighbors-220 7
+scalar UavWsnNetwork.radioMedium neighbors-221 13
+scalar UavWsnNetwork.radioMedium neighbors-222 17
+scalar UavWsnNetwork.radioMedium neighbors-223 12
+scalar UavWsnNetwork.radioMedium neighbors-224 17
+scalar UavWsnNetwork.radioMedium neighbors-225 8
+scalar UavWsnNetwork.radioMedium neighbors-226 14
+scalar UavWsnNetwork.radioMedium neighbors-227 13
+scalar UavWsnNetwork.radioMedium neighbors-228 12
+scalar UavWsnNetwork.radioMedium neighbors-229 13
+scalar UavWsnNetwork.radioMedium neighbors-230 7
+scalar UavWsnNetwork.radioMedium neighbors-231 12
+scalar UavWsnNetwork.radioMedium neighbors-232 17
+scalar UavWsnNetwork.radioMedium neighbors-233 14
+scalar UavWsnNetwork.radioMedium neighbors-234 14
+scalar UavWsnNetwork.radioMedium neighbors-235 12
+scalar UavWsnNetwork.radioMedium neighbors-236 13
+scalar UavWsnNetwork.radioMedium neighbors-237 8
+scalar UavWsnNetwork.radioMedium neighbors-238 12
+scalar UavWsnNetwork.radioMedium neighbors-239 16
+scalar UavWsnNetwork.radioMedium neighbors-240 9
+scalar UavWsnNetwork.radioMedium neighbors-241 17
+scalar UavWsnNetwork.radioMedium neighbors-242 6
+scalar UavWsnNetwork.radioMedium neighbors-243 12
+scalar UavWsnNetwork.radioMedium neighbors-244 10
+scalar UavWsnNetwork.radioMedium neighbors-245 18
+scalar UavWsnNetwork.radioMedium neighbors-246 12
+scalar UavWsnNetwork.radioMedium neighbors-247 10
+scalar UavWsnNetwork.radioMedium neighbors-248 11
+scalar UavWsnNetwork.radioMedium neighbors-249 13
+scalar UavWsnNetwork.radioMedium neighbors-250 13
+scalar UavWsnNetwork.radioMedium neighbors-251 7
+scalar UavWsnNetwork.radioMedium neighbors-252 10
+scalar UavWsnNetwork.radioMedium neighbors-253 11
+scalar UavWsnNetwork.radioMedium neighbors-254 15
+scalar UavWsnNetwork.radioMedium neighbors-255 17
+scalar UavWsnNetwork.radioMedium neighbors-256 11
+scalar UavWsnNetwork.radioMedium neighbors-257 11
+scalar UavWsnNetwork.radioMedium neighbors-258 13
+scalar UavWsnNetwork.radioMedium neighbors-259 6
+scalar UavWsnNetwork.radioMedium neighbors-260 11
+scalar UavWsnNetwork.radioMedium neighbors-261 5
+scalar UavWsnNetwork.radioMedium neighbors-262 5
+scalar UavWsnNetwork.radioMedium neighbors-263 6
+scalar UavWsnNetwork.radioMedium neighbors-264 13
+scalar UavWsnNetwork.radioMedium neighbors-265 6
+scalar UavWsnNetwork.radioMedium neighbors-266 14
+scalar UavWsnNetwork.radioMedium neighbors-267 12
+scalar UavWsnNetwork.radioMedium neighbors-268 9
+scalar UavWsnNetwork.radioMedium neighbors-269 12
+scalar UavWsnNetwork.radioMedium neighbors-270 6
+scalar UavWsnNetwork.radioMedium neighbors-271 9
+scalar UavWsnNetwork.radioMedium neighbors-272 10
+scalar UavWsnNetwork.radioMedium neighbors-273 8
+scalar UavWsnNetwork.radioMedium neighbors-274 14
+scalar UavWsnNetwork.radioMedium neighbors-275 10
+scalar UavWsnNetwork.radioMedium neighbors-276 8
+scalar UavWsnNetwork.radioMedium neighbors-277 10
+scalar UavWsnNetwork.radioMedium neighbors-278 12
+scalar UavWsnNetwork.radioMedium neighbors-279 13
+scalar UavWsnNetwork.radioMedium neighbors-280 13
+scalar UavWsnNetwork.radioMedium neighbors-281 7
+scalar UavWsnNetwork.radioMedium neighbors-282 15
+scalar UavWsnNetwork.radioMedium neighbors-283 6
+scalar UavWsnNetwork.radioMedium neighbors-284 11
+scalar UavWsnNetwork.radioMedium neighbors-285 11
+scalar UavWsnNetwork.radioMedium neighbors-286 3
+scalar UavWsnNetwork.radioMedium neighbors-287 6
+scalar UavWsnNetwork.radioMedium neighbors-288 6
+scalar UavWsnNetwork.radioMedium neighbors-289 8
+scalar UavWsnNetwork.radioMedium neighbors-290 14
+scalar UavWsnNetwork.radioMedium neighbors-291 13
+scalar UavWsnNetwork.radioMedium neighbors-292 11
+scalar UavWsnNetwork.radioMedium neighbors-293 15
+scalar UavWsnNetwork.radioMedium neighbors-294 10
+scalar UavWsnNetwork.radioMedium neighbors-295 7
+scalar UavWsnNetwork.radioMedium neighbors-296 14
+scalar UavWsnNetwork.radioMedium neighbors-297 8
+scalar UavWsnNetwork.radioMedium neighbors-298 6
+scalar UavWsnNetwork.radioMedium neighbors-299 7
+scalar UavWsnNetwork.radioMedium neighbors-300 14
+scalar UavWsnNetwork.radioMedium neighbors-301 11
+scalar UavWsnNetwork.radioMedium neighbors-302 15
+scalar UavWsnNetwork.radioMedium neighbors-303 13
+scalar UavWsnNetwork.radioMedium neighbors-304 7
+scalar UavWsnNetwork.radioMedium neighbors-305 16
+scalar UavWsnNetwork.radioMedium neighbors-306 12
+scalar UavWsnNetwork.radioMedium neighbors-307 6
+scalar UavWsnNetwork.radioMedium neighbors-308 9
+scalar UavWsnNetwork.radioMedium neighbors-309 7
+scalar UavWsnNetwork.radioMedium neighbors-310 5
+scalar UavWsnNetwork.radioMedium neighbors-311 10
+scalar UavWsnNetwork.radioMedium neighbors-312 10
+scalar UavWsnNetwork.radioMedium neighbors-313 16
+scalar UavWsnNetwork.radioMedium neighbors-314 14
+scalar UavWsnNetwork.radioMedium neighbors-315 14
+scalar UavWsnNetwork.radioMedium neighbors-316 9
+scalar UavWsnNetwork.radioMedium neighbors-317 13
+scalar UavWsnNetwork.radioMedium neighbors-318 11
+scalar UavWsnNetwork.radioMedium neighbors-319 11
+scalar UavWsnNetwork.radioMedium neighbors-320 9
+scalar UavWsnNetwork.radioMedium neighbors-321 14
+scalar UavWsnNetwork.radioMedium neighbors-322 9
+scalar UavWsnNetwork.radioMedium neighbors-323 15
+scalar UavWsnNetwork.radioMedium neighbors-324 16
+scalar UavWsnNetwork.radioMedium neighbors-325 17
+scalar UavWsnNetwork.radioMedium neighbors-326 14
+scalar UavWsnNetwork.radioMedium neighbors-327 11
+scalar UavWsnNetwork.radioMedium neighbors-328 15
+scalar UavWsnNetwork.radioMedium neighbors-329 11
+scalar UavWsnNetwork.radioMedium neighbors-330 9
+scalar UavWsnNetwork.radioMedium neighbors-331 14
+scalar UavWsnNetwork.radioMedium neighbors-332 13
+scalar UavWsnNetwork.radioMedium neighbors-333 8
+scalar UavWsnNetwork.radioMedium neighbors-334 11
+scalar UavWsnNetwork.radioMedium neighbors-335 8
+scalar UavWsnNetwork.radioMedium neighbors-336 14
+scalar UavWsnNetwork.radioMedium neighbors-337 8
+scalar UavWsnNetwork.radioMedium neighbors-338 8
+scalar UavWsnNetwork.radioMedium neighbors-339 14
+scalar UavWsnNetwork.radioMedium neighbors-340 8
+scalar UavWsnNetwork.radioMedium neighbors-341 12
+scalar UavWsnNetwork.radioMedium neighbors-342 10
+scalar UavWsnNetwork.radioMedium neighbors-343 15
+scalar UavWsnNetwork.radioMedium neighbors-344 10
+scalar UavWsnNetwork.radioMedium neighbors-345 11
+scalar UavWsnNetwork.radioMedium neighbors-346 14
+scalar UavWsnNetwork.radioMedium neighbors-347 16
+scalar UavWsnNetwork.radioMedium neighbors-348 13
+scalar UavWsnNetwork.radioMedium neighbors-349 10
+scalar UavWsnNetwork.radioMedium neighbors-350 17
+scalar UavWsnNetwork.radioMedium neighbors-351 9
+scalar UavWsnNetwork.radioMedium neighbors-352 16
+scalar UavWsnNetwork.radioMedium neighbors-353 12
+scalar UavWsnNetwork.radioMedium neighbors-354 12
+scalar UavWsnNetwork.radioMedium neighbors-355 14
+scalar UavWsnNetwork.radioMedium neighbors-356 9
+scalar UavWsnNetwork.radioMedium neighbors-357 13
+scalar UavWsnNetwork.radioMedium neighbors-358 11
+scalar UavWsnNetwork.radioMedium neighbors-359 8
+scalar UavWsnNetwork.radioMedium neighbors-360 14
+scalar UavWsnNetwork.radioMedium neighbors-361 9
+scalar UavWsnNetwork.radioMedium neighbors-362 17
+scalar UavWsnNetwork.radioMedium neighbors-363 10
+scalar UavWsnNetwork.radioMedium neighbors-364 11
+scalar UavWsnNetwork.radioMedium neighbors-365 7
+scalar UavWsnNetwork.radioMedium neighbors-366 13
+scalar UavWsnNetwork.radioMedium neighbors-367 7
+scalar UavWsnNetwork.radioMedium neighbors-368 14
+scalar UavWsnNetwork.radioMedium neighbors-369 14
+scalar UavWsnNetwork.radioMedium neighbors-370 11
+scalar UavWsnNetwork.radioMedium neighbors-371 15
+scalar UavWsnNetwork.radioMedium neighbors-372 9
+scalar UavWsnNetwork.radioMedium neighbors-373 14
+scalar UavWsnNetwork.radioMedium neighbors-374 13
+scalar UavWsnNetwork.radioMedium neighbors-375 3
+scalar UavWsnNetwork.radioMedium neighbors-376 9
+scalar UavWsnNetwork.radioMedium neighbors-377 11
+scalar UavWsnNetwork.radioMedium neighbors-378 17
+scalar UavWsnNetwork.radioMedium neighbors-379 7
+scalar UavWsnNetwork.radioMedium neighbors-380 10
+scalar UavWsnNetwork.radioMedium neighbors-381 12
+scalar UavWsnNetwork.radioMedium neighbors-382 6
+scalar UavWsnNetwork.radioMedium neighbors-383 15
+scalar UavWsnNetwork.radioMedium neighbors-384 8
+scalar UavWsnNetwork.radioMedium neighbors-385 6
+scalar UavWsnNetwork.radioMedium neighbors-386 12
+scalar UavWsnNetwork.radioMedium neighbors-387 10
+scalar UavWsnNetwork.radioMedium neighbors-388 19
+scalar UavWsnNetwork.radioMedium neighbors-389 10
+scalar UavWsnNetwork.radioMedium neighbors-390 9
+scalar UavWsnNetwork.radioMedium neighbors-391 15
+scalar UavWsnNetwork.radioMedium neighbors-392 13
+scalar UavWsnNetwork.radioMedium neighbors-393 11
+scalar UavWsnNetwork.radioMedium neighbors-394 9
+scalar UavWsnNetwork.radioMedium neighbors-395 8
+scalar UavWsnNetwork.radioMedium neighbors-396 16
+scalar UavWsnNetwork.radioMedium neighbors-397 10
+scalar UavWsnNetwork.radioMedium neighbors-398 7
+scalar UavWsnNetwork.radioMedium neighbors-399 13
+scalar UavWsnNetwork.radioMedium neighbors-400 1
+scalar UavWsnNetwork.radioMedium neighbors-401 1
+scalar UavWsnNetwork.radioMedium avgNeighbors 10.955223880597
+

@@ -15,20 +15,35 @@ void RadioMedium::initialize()
     int totalNodes = numSensors + 2; // sensors + uav + bs
     std::vector<std::pair<double,double>> pos(totalNodes);
 
+    // Read positions from SensorNode submodule parameters (initialX/initialY)
+    positions.resize(numSensors + 2);
     for (int i = 0; i < numSensors; ++i) {
-        cModule *n = net->getSubmodule("sensors", i);
-        pos[i].first = n->par("initialX").doubleValue();
-        pos[i].second = n->par("initialY").doubleValue();
+        cModule *m = net->getSubmodule("sensors", i);
+        double x = m->hasPar("initialX") ? m->par("initialX").doubleValue() : uniform(0, areaX);
+        double y = m->hasPar("initialY") ? m->par("initialY").doubleValue() : uniform(0, areaY);
+        positions[i] = std::make_pair(x, y);
+        pos[i].first = x;
+        pos[i].second = y;
     }
     cModule *uav = net->getSubmodule("uav");
-    pos[numSensors].first = uav->par("initialX").doubleValue();
-    pos[numSensors].second = uav->par("initialY").doubleValue();
+    if (uav) {
+        double ux = uav->hasPar("initialX") ? uav->par("initialX").doubleValue() : -200;
+        double uy = uav->hasPar("initialY") ? uav->par("initialY").doubleValue() : 500;
+        positions[numSensors] = std::make_pair(ux, uy);
+        pos[numSensors].first = ux;
+        pos[numSensors].second = uy;
+    }
     cModule *bs = net->getSubmodule("bs");
-    pos[numSensors+1].first = bs->par("initialX").doubleValue();
-    pos[numSensors+1].second = bs->par("initialY").doubleValue();
+    if (bs) {
+        double bx = bs->hasPar("initialX") ? bs->par("initialX").doubleValue() : -200;
+        double by = bs->hasPar("initialY") ? bs->par("initialY").doubleValue() : 500;
+        positions[numSensors+1] = std::make_pair(bx, by);
+        pos[numSensors+1].first = bx;
+        pos[numSensors+1].second = by;
+    }
 
     // simple neighbor counting using sensor range (assume all sensors same range)
-    double r = net->getSubmodule("sensors",0)->par("range").doubleValue();
+    double r = net->getSubmodule("sensors",0)->par("range154").doubleValue();
     long totalNeighbors = 0;
     for (int i = 0; i < totalNodes; ++i) {
         int cnt = 0;
@@ -52,32 +67,20 @@ void RadioMedium::handleMessage(cMessage *msg)
     cModule *net = getParentModule();
 
     double sx=0, sy=0, srange=100;
+    int txRadio = 154; // default
     int totalNodes = numSensors + 2;
 
-    if (gateIdx < numSensors) {
-        cModule *sender = net->getSubmodule("sensors", gateIdx);
-        sx = sender->par("initialX").doubleValue();
-        sy = sender->par("initialY").doubleValue();
-        srange = sender->par("range").doubleValue();
-    }
-    else if (gateIdx == numSensors) {
-        cModule *sender = net->getSubmodule("uav");
-        sx = sender->par("initialX").doubleValue();
-        sy = sender->par("initialY").doubleValue();
-        srange = sender->par("range").doubleValue();
-    }
-    else {
-        cModule *sender = net->getSubmodule("bs");
-        sx = sender->par("initialX").doubleValue();
-        sy = sender->par("initialY").doubleValue();
-        srange = sender->par("range").doubleValue();
-    }
+    // use parameters carried in message if present
+    if (msg->hasPar("txX")) sx = msg->par("txX").doubleValue();
+    if (msg->hasPar("txY")) sy = msg->par("txY").doubleValue();
+    if (msg->hasPar("txRange")) srange = msg->par("txRange").doubleValue();
+    if (msg->hasPar("txRadio")) txRadio = (int)msg->par("txRadio").longValue();
 
-    forwardMessage(msg, gateIdx, sx, sy, srange);
+    forwardMessage(msg, gateIdx, sx, sy, srange, txRadio);
     delete msg;
 }
 
-void RadioMedium::forwardMessage(cMessage *msg, int srcIdx, double sx, double sy, double srange)
+void RadioMedium::forwardMessage(cMessage *msg, int srcIdx, double sx, double sy, double srange, int txRadio)
 {
     cModule *net = getParentModule();
     int totalNodes = numSensors + 2;
@@ -86,27 +89,35 @@ void RadioMedium::forwardMessage(cMessage *msg, int srcIdx, double sx, double sy
         if (j == srcIdx) continue;
         double tx=0, ty=0;
         if (j < numSensors) {
-            cModule *n = net->getSubmodule("sensors", j);
-            tx = n->par("initialX").doubleValue();
-            ty = n->par("initialY").doubleValue();
+            tx = positions[j].first;
+            ty = positions[j].second;
         }
         else if (j == numSensors) {
-            cModule *u = net->getSubmodule("uav");
-            tx = u->par("initialX").doubleValue();
-            ty = u->par("initialY").doubleValue();
+            tx = positions[j].first;
+            ty = positions[j].second;
         }
         else {
-            cModule *b = net->getSubmodule("bs");
-            tx = b->par("initialX").doubleValue();
-            ty = b->par("initialY").doubleValue();
+            tx = positions[j].first;
+            ty = positions[j].second;
         }
 
         double dx = sx - tx;
         double dy = sy - ty;
         double d = sqrt(dx*dx + dy*dy);
         if (d <= srange) {
-            cMessage *copy = msg->dup();
-            send(copy, "out", j);
+            // check if recipient listens to this radio
+            cModule *recipient = (j < numSensors) ? net->getSubmodule("sensors", j) : (j==numSensors ? net->getSubmodule("uav") : net->getSubmodule("bs"));
+            bool listens = false;
+            if (txRadio == 11) {
+                if (recipient->hasPar("has80211")) listens = recipient->par("has80211").boolValue();
+            }
+            else if (txRadio == 154) {
+                if (recipient->hasPar("has802154")) listens = recipient->par("has802154").boolValue();
+            }
+            if (listens) {
+                cMessage *copy = msg->dup();
+                send(copy, "out", j);
+            }
         }
     }
 }

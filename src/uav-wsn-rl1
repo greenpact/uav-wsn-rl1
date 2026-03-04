@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Wrapper so IDE can run the simulation at the expected path.
+REAL_BIN="$(dirname "$0")/../out/clang-release/uav-wsn-rl1"
+if [ ! -x "$REAL_BIN" ]; then
+  echo "Error: real binary not found or not executable: $REAL_BIN" >&2
+  exit 2
+fi
+exec "$REAL_BIN" "$@"

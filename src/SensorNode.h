@@ -10,7 +10,10 @@ class SensorNode : public cSimpleModule
   private:
     double initialX;
     double initialY;
-    double range;
+    bool has80211 = false;
+    bool has802154 = true;
+    double range154 = 100;
+    double range11 = 150;
     cMessage *sendTimer = nullptr;
 
   protected:

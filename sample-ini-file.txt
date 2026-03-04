@@ -1,0 +1,54 @@
+[General]
+network = UavWsnNetwork
+sim-time-limit = 1000s
+
+# Multi-run configuration with different seeds
+repeat = 30
+seed-set = ${repetition}
+
+# Network Topology - 100-node benchmark
+*.numNodes = 400
+*.areaX = 1000m
+*.areaY = 1000m
+
+# Sensor Node Energy Model (First-Order Radio Model) - S_Ideal specification
+*.node[*].initialEnergy = 0.5J
+
+
+*.node[*].controlPacketSize = 200bit
+*.node[*].dataPacketSize = 2000bit
+*.node[*].eElec = 50e-9J
+*.node[*].eFreeSpace = 10e-12J
+*.node[*].eMultiPath = 0.0013e-12J
+*.node[*].idleListeningPower = 1.84e-5W
+#*.node[*].chDutyCycle = 0.3
+#*.node[*].memberDutyCycle = 0.02
+#*.node[*].isolatedDutyCycle = 0.001
+*.node[*].commRadius = 100m
+
+
+# Base Station Location
+*.bs.commRadius = 250m
+*.bs.xPos = -200m
+*.bs.yPos = 500m
+
+# UAV Parameters
+*.uav.uavHeight = 30m
+*.uav.minSpeed = 10mps
+*.uav.maxSpeed = 10mps
+#*.uav.searchSpeed = 10mps
+#*.uav.discoveryInterval = 5.0s
+*.uav.commRadius = 192m
+#*.uav.dataRate = 2000000bps
+#*.uav.handshakeDelay = 0.05s
+#*.uav.roundDuration = 774s
+#*.uav.collectionWindow = 691s
+
+# Simulation Recording
+**.scalar-recording = true
+**.vector-recording = false
+
+# Output configuration for each repetition
+output-scalar-file = ${resultdir}/${configname}-${runnumber}.sca
+output-vector-file = ${resultdir}/${configname}-${runnumber}.vec
+result-dir = results/multi-run/run-${repetition}
