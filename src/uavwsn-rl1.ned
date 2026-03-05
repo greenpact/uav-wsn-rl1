@@ -18,6 +18,8 @@ simple SensorNode
         bool has802154 = default(true);
         double range154 = default(100.0);
         double range11 = default(150.0);
+        double beaconInterval = default(1.0);
+        double dataInterval = default(1.0);
     gates:
         input in;
         output out;
@@ -30,6 +32,7 @@ simple RadioMedium
         int numSensors = default(100);
         double areaX = default(1000.0);
         double areaY = default(1000.0);
+        double roundDuration = default(200.0);
     gates:
         input in[numSensors+2];
         output out[numSensors+2];
@@ -59,14 +62,12 @@ network UavWsnNetwork
                 range11 = 300;
             @display("p=50,100;i=images/device/antennatower");
         }
-        uav: SensorNode {
+        uav: src.uav.UavModule {
             parameters:
                 initialX = -200;
                 initialY = 500;
-                has80211 = true;
-                has802154 = true;
-                range11 = 150;
-                range154 = 100;
+                commRadius = 192;
+                beaconInterval = 5.0;
             @display("p=100,100;i=device/airplane");
         }
         sensors[numNodes]: SensorNode {
@@ -78,10 +79,20 @@ network UavWsnNetwork
                 range154 = 100;
             @display("p=${initialX},${initialY}");
         }
+        routing[numNodes]: src.routing.TrlarRouting {
+            parameters:
+                nodeId = index;
+                modelFile = "";
+            @display("i=block/routing");
+        }
     connections allowunconnected:
         for i=0..numNodes-1 {
-            sensors[i].out --> radioMedium.in[i];
-            radioMedium.out[i] --> sensors[i].in;
+            // sensor sends to routing, routing forwards to medium
+            sensors[i].out --> routing[i].inFromSensor;
+            routing[i].outToMedium --> radioMedium.in[i];
+            // medium sends to routing, routing forwards to sensor
+            radioMedium.out[i] --> routing[i].inFromMedium;
+            routing[i].outToSensor --> sensors[i].in;
         }
         uav.out --> radioMedium.in[numNodes];
         radioMedium.out[numNodes] --> uav.in;

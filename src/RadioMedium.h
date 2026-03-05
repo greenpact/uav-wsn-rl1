@@ -3,6 +3,8 @@
 
 #include <omnetpp.h>
 #include <vector>
+#include <string>
+#include "SensorNode.h"
 
 using namespace omnetpp;
 
@@ -13,6 +15,10 @@ class RadioMedium : public cSimpleModule
     double areaX;
     double areaY;
     std::vector<std::pair<double,double>> positions;
+    cMessage *roundTimer = nullptr;
+    double roundDuration = 200.0;
+    long controlPacketCount = 0;
+    int roundIndex = 0;
 
   protected:
     virtual void initialize() override;
@@ -20,6 +26,8 @@ class RadioMedium : public cSimpleModule
     virtual void forwardMessage(cMessage *msg, int srcIdx, double sx, double sy, double srange, int txRadio);
     // query stored position for node index (sensors 0..numSensors-1, uav=numSensors, bs=numSensors+1)
     void getPosition(int idx, double &x, double &y) const;
+    virtual void finish() override;
+    void handleRoundTimer();
 };
 
 #endif // RADIO_MEDIUM_H

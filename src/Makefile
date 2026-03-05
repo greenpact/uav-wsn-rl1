@@ -31,10 +31,10 @@ PROJECTRELATIVE_PATH = src
 O = $(PROJECT_OUTPUT_DIR)/$(CONFIGNAME)/$(PROJECTRELATIVE_PATH)
 
 # Object files for local .cc, .msg and .sm files
-OBJS = $O/RadioMedium.o $O/SensorNode.o
+OBJS = $O/RadioMedium.o $O/SensorNode.o $O/routing/TrlarRouting.o $O/routing/RLAgentInterface.o
 
 # Message files
-MSGFILES =
+MSGFILES = messages/RlBeacon.msg
 
 # SM files
 SMFILES =
@@ -101,6 +101,17 @@ $O/$(TARGET): $(OBJS)  $(wildcard $(EXTRA_OBJS)) Makefile $(CONFIGFILE)
 .PRECIOUS : %_m.h %_m.cc
 
 $O/%.o: %.cc $(COPTS_FILE) | msgheaders smheaders
+	@$(MKPATH) $(dir $@)
+	$(qecho) "$<"
+	$(Q)$(CXX) -c $(CXXFLAGS) $(COPTS) -o $@ $<
+
+# Explicit rules for routing objects (some make variants need explicit targets)
+$O/routing/TrlarRouting.o: routing/TrlarRouting.cc $(COPTS_FILE) | msgheaders smheaders
+	@$(MKPATH) $(dir $@)
+	$(qecho) "$<"
+	$(Q)$(CXX) -c $(CXXFLAGS) $(COPTS) -o $@ $<
+
+$O/routing/RLAgentInterface.o: routing/RLAgentInterface.cc $(COPTS_FILE) | msgheaders smheaders
 	@$(MKPATH) $(dir $@)
 	$(qecho) "$<"
 	$(Q)$(CXX) -c $(CXXFLAGS) $(COPTS) -o $@ $<
