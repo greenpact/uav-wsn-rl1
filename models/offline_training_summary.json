@@ -1,0 +1,36 @@
+{
+  "episodes": 5,
+  "max_steps": 20,
+  "gamma": 0.95,
+  "learning_rate": 0.001,
+  "replay_size": 100000,
+  "batch_size": 64,
+  "target_update_steps": 1000,
+  "epsilon_start": 1.0,
+  "epsilon_end": 0.05,
+  "epsilon_decay_steps": 200000,
+  "global_steps": 100,
+  "final_mean_reward": 44.41344383236522,
+  "final_mean_loss": 16.194483112644505,
+  "mlp_model": "models/offline_dqn_policy.mdl",
+  "qtable_model": "models/offline_qtable.qtab",
+  "qtable_entries": 616,
+  "normalization_mean": [
+    0.8142440915107727,
+    0.10335557907819748,
+    0.3836759924888611,
+    0.4099578857421875,
+    0.8098050355911255,
+    0.7081709504127502,
+    0.2476973533630371
+  ],
+  "normalization_std": [
+    0.05988967418670654,
+    0.11382189393043518,
+    0.23080936074256897,
+    0.3102976679801941,
+    0.10921921581029892,
+    0.16282932460308075,
+    0.11480085551738739
+  ]
+}

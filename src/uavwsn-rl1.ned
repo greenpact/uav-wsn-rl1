@@ -1,7 +1,5 @@
 package src;
 
-// Sample-based simple NED (cleaned and fixed for this project)
-
 simple SensorNode
 {
     parameters:
@@ -20,11 +18,75 @@ simple SensorNode
         double range11 = default(150.0);
         double beaconInterval = default(1.0);
         double dataInterval = default(1.0);
+        bool enableBeaconing = default(true);
+        bool enableDataGeneration = default(true);
+        bool isBaseStation = default(false);
+        @display("i=samples/inet4.5/images/misc/sensor");
     gates:
         input in;
         output out;
 }
-@display("i=samples/inet4.5/images/misc/sensor");
+
+simple TrlarRouting
+{
+    parameters:
+        @class(trlar::TrlarRouting);
+        int nodeId = default(0);
+        string modelFile = default("");
+        string transitionsFile = default("results/transitions.jsonl");
+        int bufferSize = default(32);
+        int maxCandidates = default(5);
+        int maxRetries = default(1);
+        int maxRouteAttempts = default(6);
+        int maxHops = default(30);
+        double minLinkQuality = default(0.25);
+        double minNeighborEnergyRatio = default(0.05);
+        double adaptationAlpha = default(0.2);
+        double queueHighWatermark = default(0.8);
+        double congestionPenalty = default(0.15);
+        double delayThreshold = default(0.25);
+        double rewardW1 = default(1.0);
+        double rewardW2 = default(1.0);
+        double rewardW3 = default(0.2);
+        double rewardW4 = default(1.0);
+        double ackTimeout = default(0.6);
+        double neighborTimeout = default(5.0);
+        double decisionInterval = default(0.02);
+        @display("i=block/routing");
+    gates:
+        input inFromSensor;
+        input inFromMedium;
+        output outToMedium;
+        output outToSensor;
+}
+
+simple UavModule
+{
+    parameters:
+        @class(uav::UavModule);
+        bool has80211 = default(true);
+        bool has802154 = default(true);
+        double initialX = default(-200.0);
+        double initialY = default(500.0);
+        double currentX @mutable = default(-200.0);
+        double currentY @mutable = default(500.0);
+        double areaX = default(1000.0);
+        double areaY = default(1000.0);
+        double commRadius = default(192.0);
+        double uploadRadius = default(280.0);
+        double beaconInterval = default(5.0);
+        double positionUpdateInterval = default(0.5);
+        double uploadInterval = default(0.5);
+        double minSpeed = default(10.0);
+        double maxSpeed = default(10.0);
+        double missionPeriod = default(280.0);
+        double missionDuration = default(-1.0);
+        double contactWindow = default(8.0);
+        @display("i=device/airplane");
+    gates:
+        input in;
+        output out;
+}
 
 simple RadioMedium
 {
@@ -33,11 +95,11 @@ simple RadioMedium
         double areaX = default(1000.0);
         double areaY = default(1000.0);
         double roundDuration = default(200.0);
+        @display("i=block/broadcast");
     gates:
         input in[numSensors+2];
         output out[numSensors+2];
 }
-@display("i=block/broadcast");
 
 network UavWsnNetwork
 {
@@ -51,7 +113,7 @@ network UavWsnNetwork
                 numSensors = parent.numNodes;
                 areaX = parent.areaX;
                 areaY = parent.areaY;
-            @display("p=200,200;i=block/broadcast");
+            @display("p=200,200");
         }
         bs: SensorNode {
             parameters:
@@ -60,15 +122,20 @@ network UavWsnNetwork
                 has80211 = true;
                 has802154 = false;
                 range11 = 300;
-            @display("p=50,100;i=images/device/antennatower");
+                enableBeaconing = false;
+                enableDataGeneration = false;
+                isBaseStation = true;
+            @display("p=50,100;i=device/antennatower");
         }
-        uav: src.uav.UavModule {
+        uav: UavModule {
             parameters:
                 initialX = -200;
                 initialY = 500;
+                areaX = parent.areaX;
+                areaY = parent.areaY;
                 commRadius = 192;
                 beaconInterval = 5.0;
-            @display("p=100,100;i=device/airplane");
+            @display("p=100,100");
         }
         sensors[numNodes]: SensorNode {
             parameters:
@@ -79,21 +146,19 @@ network UavWsnNetwork
                 range154 = 100;
             @display("p=${initialX},${initialY}");
         }
-        routing[numNodes]: src.routing.TrlarRouting {
+        routing[numNodes]: TrlarRouting {
             parameters:
                 nodeId = index;
-                modelFile = "";
             @display("i=block/routing");
         }
     connections allowunconnected:
         for i=0..numNodes-1 {
-            // sensor sends to routing, routing forwards to medium
             sensors[i].out --> routing[i].inFromSensor;
             routing[i].outToMedium --> radioMedium.in[i];
-            // medium sends to routing, routing forwards to sensor
             radioMedium.out[i] --> routing[i].inFromMedium;
             routing[i].outToSensor --> sensors[i].in;
         }
+
         uav.out --> radioMedium.in[numNodes];
         radioMedium.out[numNodes] --> uav.in;
 

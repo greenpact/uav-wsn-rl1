@@ -1,7 +1,7 @@
 #include "RadioMedium.h"
 #include "SensorNode.h"
 
-using namespace omnetpp;
+#include <cmath>
 
 Define_Module(RadioMedium);
 
@@ -12,12 +12,12 @@ void RadioMedium::initialize()
     areaY = par("areaY").doubleValue();
     roundDuration = par("roundDuration").doubleValue();
 
-    // compute and record simple connectivity statistics at init
+    // Compute and record simple connectivity statistics at init.
     cModule *net = getParentModule();
-    int totalNodes = numSensors + 2; // sensors + uav + bs
+    const int totalNodes = numSensors + 2; // sensors + uav + bs
     std::vector<std::pair<double,double>> pos(totalNodes);
 
-    // Read positions from SensorNode submodule parameters (initialX/initialY)
+    // Read static positions from module parameters.
     positions.resize(numSensors + 2);
     for (int i = 0; i < numSensors; ++i) {
         cModule *m = net->getSubmodule("sensors", i);
@@ -44,8 +44,10 @@ void RadioMedium::initialize()
         pos[numSensors+1].second = by;
     }
 
-    // simple neighbor counting using sensor range (assume all sensors same range)
-    double r = net->getSubmodule("sensors",0)->par("range154").doubleValue();
+    const double r = (numSensors > 0)
+        ? net->getSubmodule("sensors",0)->par("range154").doubleValue()
+        : 100.0;
+
     long totalNeighbors = 0;
     for (int i = 0; i < totalNodes; ++i) {
         int cnt = 0;
@@ -75,15 +77,20 @@ void RadioMedium::handleMessage(cMessage *msg)
         return;
     }
 
-    // arrival gate index corresponds to sender index (sensors: 0..numSensors-1, uav:numSensors, bs:numSensors+1)
-    int gateIdx = msg->getArrivalGate()->getIndex();
-    cModule *net = getParentModule();
+    // Arrival gate index corresponds to sender index:
+    // sensors: 0..numSensors-1, uav:numSensors, bs:numSensors+1.
+    const int gateIdx = msg->getArrivalGate()->getIndex();
 
-    double sx=0, sy=0, srange=100;
+    double defaultX = 0.0;
+    double defaultY = 0.0;
+    getPosition(gateIdx, defaultX, defaultY);
+
+    double sx = defaultX;
+    double sy = defaultY;
+    double srange = 100.0;
     int txRadio = 154; // default
-    int totalNodes = numSensors + 2;
 
-    // use parameters carried in message if present
+    // Prefer sender-provided TX context, fallback to known source position.
     if (msg->hasPar("txX")) sx = msg->par("txX").doubleValue();
     if (msg->hasPar("txY")) sy = msg->par("txY").doubleValue();
     if (msg->hasPar("txRange")) srange = msg->par("txRange").doubleValue();
@@ -96,62 +103,83 @@ void RadioMedium::handleMessage(cMessage *msg)
 void RadioMedium::forwardMessage(cMessage *msg, int srcIdx, double sx, double sy, double srange, int txRadio)
 {
     cModule *net = getParentModule();
-    int totalNodes = numSensors + 2;
+    const int totalNodes = numSensors + 2;
+    const bool hasUnicastDst = msg->hasPar("dstIdx");
+    const int dstIdx = hasUnicastDst ? static_cast<int>(msg->par("dstIdx").longValue()) : -1;
 
     for (int j = 0; j < totalNodes; ++j) {
-        if (j == srcIdx) continue;
-        double tx=0, ty=0;
-        // dynamic UAV position lookup for uav index
-        if (j == numSensors) {
-            cModule *uav = net->getSubmodule("uav");
-            if (uav && uav->hasPar("currentX") && uav->hasPar("currentY")) {
-                tx = uav->par("currentX").doubleValue();
-                ty = uav->par("currentY").doubleValue();
-            } else {
-                tx = positions[j].first;
-                ty = positions[j].second;
-            }
-        } else if (j == numSensors+1) {
-            tx = positions[j].first;
-            ty = positions[j].second;
-        } else {
-            tx = positions[j].first;
-            ty = positions[j].second;
-        }
+        if (j == srcIdx)
+            continue;
+        if (hasUnicastDst && dstIdx >= 0 && j != dstIdx)
+            continue;
 
-        double dx = sx - tx;
-        double dy = sy - ty;
-        double d = sqrt(dx*dx + dy*dy);
+        double tx = 0.0;
+        double ty = 0.0;
+        getPosition(j, tx, ty);
+
+        const double dx = sx - tx;
+        const double dy = sy - ty;
+        const double d = std::sqrt(dx * dx + dy * dy);
         if (d <= srange) {
-            // check if recipient listens to this radio
-            cModule *recipient = (j < numSensors) ? net->getSubmodule("sensors", j) : (j==numSensors ? net->getSubmodule("uav") : net->getSubmodule("bs"));
-            bool listens = false;
-            if (txRadio == 11) {
-                if (recipient->hasPar("has80211")) listens = recipient->par("has80211").boolValue();
-            }
-            else if (txRadio == 154) {
-                if (recipient->hasPar("has802154")) listens = recipient->par("has802154").boolValue();
-            }
-                if (listens) {
-                    // increment control packet counter if message tagged as control
-                            if (msg->hasPar("isControl") && msg->par("isControl").boolValue()) {
-                                controlPacketCount++;
-                            }
-                            // increment hop count for forwarded messages
-                            if (msg->hasPar("hopCount")) {
-                                long h = msg->par("hopCount").longValue();
-                                // update original so copies reflect increment
-                                msg->par("hopCount") = h+1;
-                            } else {
-                                msg->addPar("hopCount") = 1;
-                            }
-                            cMessage *copy = msg->dup();
-                    // annotate copy with source index so recipients can track neighbors
-                    copy->addPar("srcIdx") = srcIdx;
-                    send(copy, "out", j);
-                }
+            cModule *recipient = (j < numSensors)
+                ? net->getSubmodule("sensors", j)
+                : ((j == numSensors) ? net->getSubmodule("uav") : net->getSubmodule("bs"));
+            if (!recipient)
+                continue;
+            if (!recipientListens(recipient, txRadio))
+                continue;
+
+            if (msg->hasPar("isControl") && msg->par("isControl").boolValue())
+                controlPacketCount++;
+
+            cMessage *copy = msg->dup();
+            const long hop = copy->hasPar("hopCount") ? copy->par("hopCount").longValue() : 0;
+            if (copy->hasPar("hopCount"))
+                copy->par("hopCount") = hop + 1;
+            else
+                copy->addPar("hopCount") = hop + 1;
+
+            if (copy->hasPar("srcIdx"))
+                copy->par("srcIdx") = srcIdx;
+            else
+                copy->addPar("srcIdx") = srcIdx;
+
+            send(copy, "out", j);
         }
     }
+}
+
+void RadioMedium::getPosition(int idx, double &x, double &y) const
+{
+    x = 0.0;
+    y = 0.0;
+
+    if (idx < 0 || idx >= static_cast<int>(positions.size()))
+        return;
+
+    cModule *net = getParentModule();
+    if (idx == numSensors) {
+        cModule *uav = net->getSubmodule("uav");
+        if (uav && uav->hasPar("currentX") && uav->hasPar("currentY")) {
+            x = uav->par("currentX").doubleValue();
+            y = uav->par("currentY").doubleValue();
+            return;
+        }
+    }
+
+    x = positions[idx].first;
+    y = positions[idx].second;
+}
+
+bool RadioMedium::recipientListens(cModule *recipient, int txRadio) const
+{
+    if (!recipient)
+        return false;
+    if (txRadio == 11)
+        return recipient->hasPar("has80211") && recipient->par("has80211").boolValue();
+    if (txRadio == 154)
+        return recipient->hasPar("has802154") && recipient->par("has802154").boolValue();
+    return true;
 }
 
 void RadioMedium::handleRoundTimer()
@@ -161,8 +189,9 @@ void RadioMedium::handleRoundTimer()
     for (int i = 0; i < numSensors; ++i) {
         cModule *m = net->getSubmodule("sensors", i);
         if (m) {
-            SensorNode *sn = check_and_cast<SensorNode*>(m);
-            totalEnergy += sn->getRemainingEnergy();
+            SensorNode *sn = dynamic_cast<SensorNode*>(m);
+            if (sn)
+                totalEnergy += sn->getRemainingEnergy();
         }
     }
 

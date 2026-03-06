@@ -1,8 +1,37 @@
 #include "SensorNode.h"
-#include <fstream>
+
+#include <algorithm>
+#include <cstring>
 #include <filesystem>
+#include <fstream>
+#include <string>
 
 Define_Module(SensorNode);
+
+namespace {
+
+std::filesystem::path ensureResultFile(const std::string& filename, const std::string& header)
+{
+    std::filesystem::path dir("results");
+    std::filesystem::create_directories(dir);
+    std::filesystem::path filePath = dir / filename;
+
+    if (!std::filesystem::exists(filePath)) {
+        std::ofstream out(filePath, std::ios::out);
+        if (out.is_open())
+            out << header << '\n';
+    }
+    return filePath;
+}
+
+void appendCsvRow(const std::filesystem::path& filePath, const std::string& row)
+{
+    std::ofstream out(filePath, std::ios::app);
+    if (out.is_open())
+        out << row << '\n';
+}
+
+} // namespace
 
 void SensorNode::initialize()
 {
@@ -12,59 +41,72 @@ void SensorNode::initialize()
     has802154 = par("has802154").boolValue();
     range11 = par("range11").doubleValue();
     range154 = par("range154").doubleValue();
+    enableBeaconing = par("enableBeaconing").boolValue();
+    enableDataGeneration = par("enableDataGeneration").boolValue();
+    isBaseStation = par("isBaseStation").boolValue();
 
     // energy params
     remainingEnergy = par("initialEnergy").doubleValue();
     eElec = par("eElec").doubleValue();
     eAmp = par("eFreeSpace").doubleValue();
 
-    sendTimer = new cMessage("beaconTimer");
-    // beacon interval parameter (default 1.0)
-    double interval = par("beaconInterval").doubleValue();
-    if (interval <= 0) interval = 1.0;
-    // randomize start to avoid synchronized beacons
-    scheduleAt(simTime() + uniform(0, std::min(0.5, interval)), sendTimer);
+    if (enableBeaconing && !isBaseStation) {
+        sendTimer = new cMessage("beaconTimer");
+        double interval = par("beaconInterval").doubleValue();
+        if (interval <= 0)
+            interval = 1.0;
+        scheduleAt(simTime() + uniform(0, std::min(0.5, interval)), sendTimer);
+    }
 
-    // data generation timer
-    dataInterval = par("dataInterval").doubleValue();
-    if (dataInterval <= 0) dataInterval = 1.0;
-    dataTimer = new cMessage("dataTimer");
-    scheduleAt(simTime() + uniform(0, std::min(0.5, dataInterval)), dataTimer);
+    if (enableDataGeneration && !isBaseStation) {
+        dataInterval = par("dataInterval").doubleValue();
+        if (dataInterval <= 0)
+            dataInterval = 1.0;
+        dataTimer = new cMessage("dataTimer");
+        scheduleAt(simTime() + uniform(0, std::min(0.5, dataInterval)), dataTimer);
+    }
 }
 
 void SensorNode::handleMessage(cMessage *msg)
 {
     if (msg == sendTimer) {
+        if (remainingEnergy <= 0) {
+            delete msg;
+            sendTimer = nullptr;
+            return;
+        }
+
         // send beacon on available radios; if both available, alternate
-        static int toggle = 0;
         if (has802154) {
-            int bits = (int)par("controlPacketSize").doubleValue();
             cMessage *b = new cMessage("BEACON");
             b->addPar("txX") = initialX;
             b->addPar("txY") = initialY;
             b->addPar("txRange") = range154;
             b->addPar("txRadio") = 154;
             b->addPar("isControl") = true;
-            // consume energy for transmit
-            consumeEnergyTx(bits, range154);
             send(b, "out");
         }
         if (has80211) {
-            int bits = (int)par("controlPacketSize").doubleValue();
             cMessage *b2 = new cMessage("BEACON");
             b2->addPar("txX") = initialX;
             b2->addPar("txY") = initialY;
             b2->addPar("txRange") = range11;
             b2->addPar("txRadio") = 11;
             b2->addPar("isControl") = true;
-            consumeEnergyTx(bits, range11);
             send(b2, "out");
         }
         double interval = par("beaconInterval").doubleValue();
-        if (interval <= 0) interval = 1.0;
+        if (interval <= 0)
+            interval = 1.0;
         scheduleAt(simTime() + interval, sendTimer);
     }
     else if (msg == dataTimer) {
+        if (remainingEnergy <= 0) {
+            delete msg;
+            dataTimer = nullptr;
+            return;
+        }
+
         // generate a data packet and send to routing
         cMessage *d = new cMessage("DATA");
         // annotate with generation time, sequence and source id
@@ -79,24 +121,16 @@ void SensorNode::handleMessage(cMessage *msg)
         d->addPar("txRadio") = 154;
         d->addPar("isControl") = false;
         d->addPar("hopCount") = 0;
-        // consume tx energy for generation (approx)
-        int bits = (int)par("dataPacketSize").doubleValue();
-        consumeEnergyTx(bits, range154);
         recordScalar("dataGenerated", 1);
-        // write to CSV generated log
+
         try {
-            std::filesystem::path p("/home/wte/uavwsn-rl/rl-1/uav-wsn-rl1/results/packet_generated.csv");
-            if (!std::filesystem::exists(p)) {
-                std::ofstream h(p.string(), std::ios::app);
-                h << "t,src,seq,t_gen" << std::endl;
-                h.close();
-            }
-            std::ofstream ofs(p.string(), std::ios::app);
-            if (ofs.is_open()) {
-                ofs << simTime().dbl() << "," << idx << "," << (seqCounter-1) << "," << simTime().dbl() << "\n";
-                ofs.close();
-            }
+            const std::filesystem::path p = ensureResultFile("packet_generated.csv", "t,src,seq,t_gen");
+            appendCsvRow(p, std::to_string(simTime().dbl()) + "," +
+                            std::to_string(idx) + "," +
+                            std::to_string(seqCounter - 1) + "," +
+                            std::to_string(simTime().dbl()));
         } catch(...) {}
+
         double interval = dataInterval;
         scheduleAt(simTime() + interval, dataTimer);
         // send into routing via upward gate (same as beacon send)
@@ -105,32 +139,32 @@ void SensorNode::handleMessage(cMessage *msg)
     else {
         // message arrived from medium
         // receiving consumes energy
-        int bits = (int)par("dataPacketSize").doubleValue();
+        int bits = msg->hasPar("isControl") && msg->par("isControl").boolValue()
+            ? (int)par("controlPacketSize").doubleValue()
+            : (int)par("dataPacketSize").doubleValue();
         consumeEnergyRx(bits);
         recordScalar("rx_count", 1);
+
         // if this is a data packet and this module is the base station (bs), log delivery
-        if (strcmp(msg->getName(), "DATA") == 0) {
-            // compute e2e delay if t_gen present
+        if (isBaseStation && strcmp(msg->getName(), "DATA") == 0) {
             if (msg->hasPar("t_gen")) {
                 double tgen = msg->par("t_gen").doubleValue();
                 double delay = simTime().dbl() - tgen;
                 recordScalar("e2eDelay", delay);
-                // write per-delivery CSV
+
                 try {
-                    std::filesystem::path p("/home/wte/uavwsn-rl/rl-1/uav-wsn-rl1/results/packet_delivered.csv");
-                    if (!std::filesystem::exists(p)) {
-                        std::ofstream h(p.string(), std::ios::app);
-                        h << "t,src,seq,t_gen,t_recv,hopCount,delay" << std::endl;
-                        h.close();
-                    }
-                    std::ofstream ofs(p.string(), std::ios::app);
-                    if (ofs.is_open()) {
-                        int src = msg->hasPar("srcIdx") ? (int)msg->par("srcIdx").longValue() : -1;
-                        int seq = msg->hasPar("seq") ? (int)msg->par("seq").longValue() : -1;
-                        int hops = msg->hasPar("hopCount") ? (int)msg->par("hopCount").longValue() : 0;
-                        ofs << simTime().dbl() << "," << src << "," << seq << "," << tgen << "," << simTime().dbl() << "," << hops << "," << delay << "\n";
-                        ofs.close();
-                    }
+                    const std::filesystem::path p = ensureResultFile("packet_delivered.csv", "t,src,seq,t_gen,t_recv,hopCount,delay");
+                    const int src = msg->hasPar("srcIdx") ? (int)msg->par("srcIdx").longValue() : -1;
+                    const int seq = msg->hasPar("seq") ? (int)msg->par("seq").longValue() : -1;
+                    const int hops = msg->hasPar("hopCount") ? (int)msg->par("hopCount").longValue() : 0;
+                    appendCsvRow(p,
+                        std::to_string(simTime().dbl()) + "," +
+                        std::to_string(src) + "," +
+                        std::to_string(seq) + "," +
+                        std::to_string(tgen) + "," +
+                        std::to_string(simTime().dbl()) + "," +
+                        std::to_string(hops) + "," +
+                        std::to_string(delay));
                 } catch(...) {}
             }
         }
@@ -142,8 +176,10 @@ void SensorNode::handleMessage(cMessage *msg)
 
 void SensorNode::finish()
 {
-    cancelAndDelete(sendTimer);
-    if (dataTimer) cancelAndDelete(dataTimer);
+    if (sendTimer)
+        cancelAndDelete(sendTimer);
+    if (dataTimer)
+        cancelAndDelete(dataTimer);
 }
 
 void SensorNode::consumeEnergyTx(int bits, double d)
@@ -167,16 +203,7 @@ void SensorNode::recordNodeDeath()
     deathRecorded = true;
     int idx = getIndex();
     try {
-        std::filesystem::path p("/home/wte/uavwsn-rl/rl-1/uav-wsn-rl1/results/node_deaths.csv");
-        if (!std::filesystem::exists(p)) {
-            std::ofstream h(p.string(), std::ios::app);
-            h << "node,t_death" << std::endl;
-            h.close();
-        }
-        std::ofstream ofs(p.string(), std::ios::app);
-        if (ofs.is_open()) {
-            ofs << idx << "," << simTime().dbl() << "\n";
-            ofs.close();
-        }
+        const std::filesystem::path p = ensureResultFile("node_deaths.csv", "node,t_death");
+        appendCsvRow(p, std::to_string(idx) + "," + std::to_string(simTime().dbl()));
     } catch(...) {}
 }

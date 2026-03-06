@@ -1,0 +1,221 @@
+RL-based UAV-Assisted WSN Routing — Implementation Plan
+
+Summary
+-------
+This document defines a complete, actionable implementation plan for the RL/Q-learning based UAV-assisted WSN routing protocol described in `descriptions/rl-model.txt`. It covers: design choices, OMNeT++ integration, training pipeline (digital-twin), model export and embedding, experiments and evaluation, implementation milestones, and risks.
+
+Scope & Objectives
+------------------
+- Implement TR-LAR routing module for OMNeT++ / INET (no-INET fallback supported by current repo design).
+- Centralized offline training (digital twin) with Deep Q-Learning (DQN) or tabular Q depending on state size.
+- Export lightweight policy for in-simulation inference (C++ evaluation or TinyML runtime).
+- Support UAV beacons and mission schedule; nodes use local state + pretrained Q to make forwarding decisions.
+- Provide reproducible experiments and baseline comparisons.
+
+Assumptions
+-----------
+- OMNeT++ 6.3.0 is used (project already built in repository).
+- Current project implements a simple `RadioMedium` and `SensorNode`. Integration points exist to add routing logic and UAV behavior.
+- No INET dependency is required, but approach supports INET `RoutingProtocolBase` if INET is later added.
+- Knowledge and literature: standard Q-learning, DQN with replay, ε-greedy exploration, target network stabilization, domain randomization for sim2real robustness.
+
+High-level design
+-----------------
+1. Agent type
+   - Start with DQN (Deep Q-Network) as centralized trainer producing a policy Qθ(s,a). Use a small MLP that maps the compact state vector to Q-values for K candidate actions.
+   - Optionally support tabular Q (or small lookup table) if action/state discretization is small.
+
+2. State (node-local)
+   - s = [resEnergyRatio, bufferOccRatio, neighborDensity, linkQualClass_to_candidate_j (per candidate), predictedUAVContactTime]
+   - To feed into DQN, create a fixed-length vector by: scalar stats + aggregated neighbor info (e.g., top-K LQ features) + normalized τ.
+
+3. Actions
+   - Select one of K candidate neighbors (top-K by reachability/quality). K should be small (e.g., 4–8) to keep output size manageable.
+
+4. Reward
+   - r = w1 * IsDelivered - w2 * EnergyConsumed - w3 * Delay - w4 * IsDropped
+   - Normalize reward components. Use discount γ near 0.9 for cumulative objectives.
+
+5. Training architecture
+   - Centralized trainer (Python) interacts with OMNeT++ digital twin via one of two approaches:
+     a) In-process: use OMNeT++ as environment, collect episodes, save transitions to local files, and run offline training in Python using logged transitions.
+     b) Co-simulation: use an IPC or socket interface (e.g., ZeroMQ) where OMNeT++ sends transitions to Python trainer and receives action policies.
+   - Recommendation: Use offline logged transitions + Python training (PyTorch or TensorFlow). This simplifies integration and repeatability.
+
+OMNeT++ implementation plan
+---------------------------
+Files to add/modify (suggested):
+- src/routing/TrlarRouting.h
+- src/routing/TrlarRouting.cc
+- src/routing/RLAgentInterface.h (loader/inference helper)
+- src/uav/UavModule.h / .cc (if not present) — handle mission and beacons
+- src/messages/RlBeacon.msg (if using OMNeT++ messages) or re-use cMessage with pars
+- Update `src/uavwsn-rl1.ned` to include the new modules or parameters (already partly present)
+
+Detailed component responsibilities
+- `TrlarRouting` (C++ simple module or INET-compatible routing module):
+  - On initialization: load exported model weights (file format: JSON/binary) into an inference helper.
+  - Maintain neighbor table and queue accessors (must interface with existing SensorNode queue).
+  - For each packet at head of queue:
+    - Build state vector s using local sensors, queue, neighbor info, and last UAV beacon.
+    - Build CandidateSet (top-K) and query model for Q-values for those K actions.
+    - Apply local bias table Δi(j) and pick argmax.
+    - Forward packet and observe outcome (ACK/timeouts) to update Δi(j).
+  - Logging: decisions, chosen next hop, reward components for offline analysis.
+
+- `RLAgentInterface` (inference helper):
+  - Lightweight C++ inference for the small MLP (single forward pass). Implement as plain matrix multiply + activation (ReLU) to avoid heavy dependencies.
+  - Alternatively integrate a TinyML runtime if you plan to export TF Lite or similar.
+
+- `UavModule`:
+  - Implement mission trajectory (existing code may be extended) and periodic beaconing containing predicted contact windows.
+  - When in contact region, accept direct sensor transmissions and buffer aggregation.
+
+Message formats
+- Beacon (UDP/cMessage): contains region/time-window predictions; nodes read and update τi.
+- Routing control/ACK messages for local feedback can be implemented as short cMessages or using reliability events in RadioMedium.
+
+Training pipeline (centralized)
+------------------------------
+1. Digital twin setup
+   - Use a headless OMNeT++ scenario to generate many runs with randomized seeds.
+   - Each run logs transitions: (s, a, r, s', done) into binary files or an experience DB.
+   - Randomize: node positions, radio noise, traffic rates, UAV trajectories, mission durations.
+
+2. Offline dataset collection
+   - Use exploration policy (ε-greedy with high ε) during early collection.
+   - Collect at least millions of transitions depending on state dimensionality.
+
+3. Training
+   - Implement DQN with replay buffer, target network, and prioritized replay (optional).
+   - Use domain randomization to improve generalization.
+   - Track metrics: training loss, episode return, delivery ratio on held-out test scenarios.
+
+4. Export
+   - Export model weights and normalization parameters (min/max or mean/std) into a compact JSON + binary weight file.
+   - Export small MLP topology (layer sizes, activations) plus pre-processing steps.
+
+5. Validate in simulation
+   - Load exported model into TrlarRouting and run validation experiments in OMNeT++.
+
+Model choices & fallback strategies
+- Start with a small MLP (2–3 layers, 64–64 units) to balance expressivity and C++ inference cost.
+- If state/action space is extremely small, use tabular Q for simpler deployment.
+- If DQN shows instability, consider Double DQN and dueling architectures.
+
+Integration details with current repo
+-------------------------------------
+- SensorNode: extend to include routing module or forward packets to `TrlarRouting` submodule.
+- RadioMedium: already provides first-order propagation; routing uses it unchanged. Ensure ACK/timeouts semantics are supported (either simulated by immediate ACK messages or application-layer handshakes).
+- NED: `src/uavwsn-rl1.ned` should place `TrlarRouting` inside each `SensorNode` submodule or make `SensorNode` call into routing code.
+
+Logging & instrumentation
+-------------------------
+- Per-run scalars: packet delivery ratio, avg delay, energy consumed per node, first-node-death time, num forwarded packets, avg neighbor degree.
+- Per-decision logs: state vector, candidate list, chosen action, reward.
+- Use periodic checkpoints and record config+seed for reproducibility.
+
+Experiment matrix
+-----------------
+For fair evaluation, run the following experiments (each entry = 30 seeds or repetitions):
+1. Baseline: Shortest-path (or greedy toward UAV), no RL
+2. Baseline: Energy-aware heuristic (e.g., prefer higher residual energy)
+3. TR-LAR (trained policy) — centralized offline training + frozen policy
+4. TR-LAR + local adaptation (Δ updates enabled)
+
+Variables to sweep:
+- N ∈ {200, 400, 500}
+- UAV mission duration / speed
+- Comm range R ∈ {75, 100, 150} m
+- Traffic rate (packets/s)
+- Buffer size B
+
+Metrics to collect:
+- Packet Delivery Ratio (to UAV and to BS)
+- Avg end-to-end delay (to UAV pickup)
+- Energy consumed per node; network lifetime (first-node-death)
+- Buffer overflow/drop rate
+- Average hop count
+
+Evaluation & visualization
+--------------------------
+- Plot PDR, energy vs. time, CDF of delay, lifetime curves.
+- Visualize trajectories and node placements in Qtenv for sample scenarios.
+- Generate tables comparing baseline vs RL under each sweep configuration.
+
+Implementation timeline & checklist
+----------------------------------
+1. (1–2 days) Code scaffolding
+   - Add `src/routing/TrlarRouting.{h,cc}` skeleton
+   - Add `src/uav/UavModule.{h,cc}` (if missing)
+   - Add `src/messages/RlBeacon.msg`
+
+2. (2–3 days) In-sim inference helper
+   - Implement `RLAgentInterface` for loading weights and performing forward passes in C++
+   - Unit tests for inference correctness vs. small Python MLP
+
+3. (3–5 days) Integrate routing logic
+   - Build state extraction, candidate selection, bias table Δ updates
+   - Implement logging and local adaptation rules
+
+4. (4–7 days) Digital twin & dataset collection
+   - Build headless OMNeT++ scenario that randomizes environment and records transitions
+   - Write export format and collection scripts
+
+5. (5–10 days) Python training loop
+   - Implement DQN training, hyperparameter search, checkpointing
+   - Train baseline models and evaluate on held-out scenarios
+
+6. (2–4 days) Model export + in-sim validation
+   - Export final model, integrate with `RLAgentInterface`, run validation
+
+7. (3–7 days) Experiment sweeps and paper-style results
+   - Run full experiment matrix, collect metrics, produce plots
+
+Total estimated time: 3–6 weeks depending on iteration and compute availability.
+
+Hyperparameters (starting points)
+---------------------------------
+- Learning rate: 1e-3
+- Replay buffer: 1e6 transitions
+- Batch size: 64
+- Discount γ: 0.99
+- ε-greedy: start 1.0 → 0.1 over 200k steps
+- Target network update: every 2k steps
+- DQN MLP: [input_dim] → 64 → 64 → [K]
+
+Reproducibility & dataset management
+-----------------------------------
+- Store JSON metadata with each run: seed, N, area, radio params, UAV plan, model version.
+- Save replay datasets (or at least sample sets) to reproduce training.
+- Use deterministic seeds in OMNeT++ runs where possible.
+
+Risks and mitigations
+---------------------
+- Large state/action spaces: start with small top-K candidate and compact state.
+- Training instability: use Double DQN, reward shaping, and target networks.
+- Simulation-to-reality mismatch: domain randomization and conservative policy deployment.
+- Integration complexity: keep inference helper dependency-free.
+
+Files to deliver (minimum)
+--------------------------
+- src/routing/TrlarRouting.h / cc
+- src/routing/RLAgentInterface.h / cc
+- src/uav/UavModule.h / cc (or integrate into existing UAV module)
+- scripts/collect_transitions.py (OMNeT++ log parser)
+- training/train_dqn.py (PyTorch or TF implementation)
+- models/*.json + weights.bin (exported model)
+- experiments/run_experiment.sh
+- descriptions/rl-implementation-plan.txt (this document)
+
+Next immediate actions (I can perform)
+-------------------------------------
+1. Create `src/routing/TrlarRouting` skeleton and `RLAgentInterface` code and compile.
+2. Add small C++ inference test to validate MLP outputs against Python reference.
+3. Scaffold `scripts/` and `training/` directories with starter templates.
+
+If you want, I can now:
+- Start by scaffolding the C++ routing module and inference helper (commit changes), or
+- Scaffold the Python training repo and a small example dataset pipeline.
+
+Tell me which immediate task you want me to start with (scaffold routing module, scaffold training pipeline, or both).

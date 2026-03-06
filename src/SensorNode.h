@@ -18,6 +18,9 @@ class SensorNode : public cSimpleModule
     cMessage *dataTimer = nullptr;
     uint64_t seqCounter = 0;
     bool deathRecorded = false;
+    bool enableBeaconing = true;
+    bool enableDataGeneration = true;
+    bool isBaseStation = false;
     double dataInterval = 1.0;
     double remainingEnergy = 0.0;
     double eElec = 50e-9;

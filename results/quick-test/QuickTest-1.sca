@@ -1,0 +1,237 @@
+version 3
+run QuickTest-1-20260306-07:43:32-19412
+attr configname QuickTest
+attr datetime 20260306-07:43:32
+attr datetimef 20260306-074332
+attr experiment QuickTest
+attr inifile omnetpp.ini
+attr iterationvars ""
+attr iterationvarsd ""
+attr iterationvarsf ""
+attr measurement ""
+attr network src.UavWsnNetwork
+attr processid 19412
+attr repetition 1
+attr replication #1
+attr resultdir results/quick-test
+attr runnumber 1
+attr seedset 1
+config network src.UavWsnNetwork
+config sim-time-limit 2s
+config *.numNodes 2
+config result-dir results/quick-test
+config repeat 3
+config network src.UavWsnNetwork
+config sim-time-limit 5000s
+config ned-path .:src
+config *.numNodes 400
+config *.areaX 1000
+config *.areaY 1000
+config *.radioMedium.roundDuration 1.0
+config **.sensors[*].initialEnergy 0.5
+config **.sensors[*].beaconInterval 0.1
+config **.sensors[*].dataInterval 1.0
+config **.sensors[*].controlPacketSize 200
+config **.sensors[*].dataPacketSize 2000
+config **.sensors[*].eElec 50e-9
+config **.sensors[*].eFreeSpace 10e-12
+config **.sensors[*].eMultiPath 0.0013e-12
+config **.sensors[*].idleListeningPower 1.84e-5
+config **.sensors[*].range154 100
+config **.sensors[*].enableBeaconing true
+config **.sensors[*].enableDataGeneration true
+config **.sensors[*].isBaseStation false
+config *.bs.initialX -200
+config *.bs.initialY 500
+config *.bs.enableBeaconing false
+config *.bs.enableDataGeneration false
+config *.bs.isBaseStation true
+config *.uav.minSpeed 10
+config *.uav.maxSpeed 10
+config *.uav.commRadius 192
+config *.uav.uploadRadius 280
+config *.uav.beaconInterval 5.0
+config *.uav.positionUpdateInterval 0.5
+config *.uav.uploadInterval 0.5
+config *.uav.missionPeriod 280
+config *.uav.missionDuration -1
+config *.uav.contactWindow 8.0
+config **.routing[*].modelFile "\"\""
+config **.routing[*].transitionsFile "\"results/transitions.jsonl\""
+config **.routing[*].bufferSize 32
+config **.routing[*].maxCandidates 5
+config **.routing[*].maxRetries 1
+config **.routing[*].maxRouteAttempts 6
+config **.routing[*].maxHops 30
+config **.routing[*].minLinkQuality 0.25
+config **.routing[*].minNeighborEnergyRatio 0.05
+config **.routing[*].adaptationAlpha 0.2
+config **.routing[*].queueHighWatermark 0.8
+config **.routing[*].congestionPenalty 0.15
+config **.routing[*].delayThreshold 0.25
+config **.routing[*].ackTimeout 0.6
+config **.routing[*].neighborTimeout 5.0
+config **.routing[*].decisionInterval 0.02
+config **.scalar-recording true
+config **.vector-recording false
+config output-scalar-file results/quick-test/QuickTest-1.sca
+config output-vector-file results/quick-test/QuickTest-1.vec
+config result-dir results/multi-run/run-1
+
+scalar UavWsnNetwork.radioMedium neighbors-0 0
+scalar UavWsnNetwork.radioMedium neighbors-1 0
+scalar UavWsnNetwork.radioMedium neighbors-2 1
+scalar UavWsnNetwork.radioMedium neighbors-3 1
+scalar UavWsnNetwork.radioMedium avgNeighbors 0.5
+scalar UavWsnNetwork.sensors[0] dataGenerated 1
+scalar UavWsnNetwork.sensors[1] dataGenerated 1
+scalar UavWsnNetwork.radioMedium roundIndex 0
+scalar UavWsnNetwork.radioMedium totalNetworkEnergy 0.9994
+scalar UavWsnNetwork.radioMedium controlPacketCount 0
+scalar UavWsnNetwork.sensors[0] dataGenerated 1
+scalar UavWsnNetwork.sensors[1] dataGenerated 1
+scalar UavWsnNetwork.radioMedium roundIndex 1
+scalar UavWsnNetwork.radioMedium totalNetworkEnergy 0.9988
+scalar UavWsnNetwork.radioMedium controlPacketCount 0
+par UavWsnNetwork.radioMedium typename "\"src.RadioMedium\""
+par UavWsnNetwork.radioMedium numSensors 2
+par UavWsnNetwork.radioMedium areaX 1000
+par UavWsnNetwork.radioMedium areaY 1000
+par UavWsnNetwork.radioMedium roundDuration 1
+par UavWsnNetwork.bs typename "\"src.SensorNode\""
+par UavWsnNetwork.bs initialX -200
+par UavWsnNetwork.bs initialY 500
+par UavWsnNetwork.bs initialEnergy 0.5
+par UavWsnNetwork.bs controlPacketSize 200
+par UavWsnNetwork.bs dataPacketSize 2000
+par UavWsnNetwork.bs eElec 5e-08
+par UavWsnNetwork.bs eFreeSpace 1e-11
+par UavWsnNetwork.bs eMultiPath 1.3e-15
+par UavWsnNetwork.bs idleListeningPower 0
+par UavWsnNetwork.bs has80211 true
+par UavWsnNetwork.bs has802154 false
+par UavWsnNetwork.bs range154 100
+par UavWsnNetwork.bs range11 300
+par UavWsnNetwork.bs beaconInterval 1
+par UavWsnNetwork.bs dataInterval 1
+par UavWsnNetwork.bs enableBeaconing false
+par UavWsnNetwork.bs enableDataGeneration false
+par UavWsnNetwork.bs isBaseStation true
+par UavWsnNetwork.uav typename "\"src.UavModule\""
+par UavWsnNetwork.uav has80211 true
+par UavWsnNetwork.uav has802154 true
+par UavWsnNetwork.uav initialX -200
+par UavWsnNetwork.uav initialY 500
+par UavWsnNetwork.uav currentX -166.667
+attr mutable ""
+par UavWsnNetwork.uav currentY 500
+attr mutable ""
+par UavWsnNetwork.uav areaX 1000
+par UavWsnNetwork.uav areaY 1000
+par UavWsnNetwork.uav commRadius 192
+par UavWsnNetwork.uav uploadRadius 280
+par UavWsnNetwork.uav beaconInterval 5
+par UavWsnNetwork.uav positionUpdateInterval 0.5
+par UavWsnNetwork.uav uploadInterval 0.5
+par UavWsnNetwork.uav minSpeed 10
+par UavWsnNetwork.uav maxSpeed 10
+par UavWsnNetwork.uav missionPeriod 280
+par UavWsnNetwork.uav missionDuration -1
+par UavWsnNetwork.uav contactWindow 8
+scalar UavWsnNetwork.uav uavCollectedPackets 0
+scalar UavWsnNetwork.uav uavUploadedPackets 0
+par UavWsnNetwork.sensors[0] typename "\"src.SensorNode\""
+par UavWsnNetwork.sensors[0] initialX 417.022
+par UavWsnNetwork.sensors[0] initialY 997.185
+par UavWsnNetwork.sensors[0] initialEnergy 0.5
+par UavWsnNetwork.sensors[0] controlPacketSize 200
+par UavWsnNetwork.sensors[0] dataPacketSize 2000
+par UavWsnNetwork.sensors[0] eElec 5e-08
+par UavWsnNetwork.sensors[0] eFreeSpace 1e-11
+par UavWsnNetwork.sensors[0] eMultiPath 1.3e-15
+par UavWsnNetwork.sensors[0] idleListeningPower 1.84e-05
+par UavWsnNetwork.sensors[0] has80211 false
+par UavWsnNetwork.sensors[0] has802154 true
+par UavWsnNetwork.sensors[0] range154 100
+par UavWsnNetwork.sensors[0] range11 150
+par UavWsnNetwork.sensors[0] beaconInterval 0.1
+par UavWsnNetwork.sensors[0] dataInterval 1
+par UavWsnNetwork.sensors[0] enableBeaconing true
+par UavWsnNetwork.sensors[0] enableDataGeneration true
+par UavWsnNetwork.sensors[0] isBaseStation false
+par UavWsnNetwork.sensors[1] typename "\"src.SensorNode\""
+par UavWsnNetwork.sensors[1] initialX 720.324
+par UavWsnNetwork.sensors[1] initialY 932.557
+par UavWsnNetwork.sensors[1] initialEnergy 0.5
+par UavWsnNetwork.sensors[1] controlPacketSize 200
+par UavWsnNetwork.sensors[1] dataPacketSize 2000
+par UavWsnNetwork.sensors[1] eElec 5e-08
+par UavWsnNetwork.sensors[1] eFreeSpace 1e-11
+par UavWsnNetwork.sensors[1] eMultiPath 1.3e-15
+par UavWsnNetwork.sensors[1] idleListeningPower 1.84e-05
+par UavWsnNetwork.sensors[1] has80211 false
+par UavWsnNetwork.sensors[1] has802154 true
+par UavWsnNetwork.sensors[1] range154 100
+par UavWsnNetwork.sensors[1] range11 150
+par UavWsnNetwork.sensors[1] beaconInterval 0.1
+par UavWsnNetwork.sensors[1] dataInterval 1
+par UavWsnNetwork.sensors[1] enableBeaconing true
+par UavWsnNetwork.sensors[1] enableDataGeneration true
+par UavWsnNetwork.sensors[1] isBaseStation false
+par UavWsnNetwork.routing[0] typename "\"src.TrlarRouting\""
+par UavWsnNetwork.routing[0] nodeId 0
+par UavWsnNetwork.routing[0] modelFile "\"\""
+par UavWsnNetwork.routing[0] transitionsFile "\"results/transitions.jsonl\""
+par UavWsnNetwork.routing[0] bufferSize 32
+par UavWsnNetwork.routing[0] maxCandidates 5
+par UavWsnNetwork.routing[0] maxRetries 1
+par UavWsnNetwork.routing[0] maxRouteAttempts 6
+par UavWsnNetwork.routing[0] maxHops 30
+par UavWsnNetwork.routing[0] minLinkQuality 0.25
+par UavWsnNetwork.routing[0] minNeighborEnergyRatio 0.05
+par UavWsnNetwork.routing[0] adaptationAlpha 0.2
+par UavWsnNetwork.routing[0] queueHighWatermark 0.8
+par UavWsnNetwork.routing[0] congestionPenalty 0.15
+par UavWsnNetwork.routing[0] delayThreshold 0.25
+par UavWsnNetwork.routing[0] rewardW1 1
+par UavWsnNetwork.routing[0] rewardW2 1
+par UavWsnNetwork.routing[0] rewardW3 0.2
+par UavWsnNetwork.routing[0] rewardW4 1
+par UavWsnNetwork.routing[0] ackTimeout 0.6
+par UavWsnNetwork.routing[0] neighborTimeout 5
+par UavWsnNetwork.routing[0] decisionInterval 0.02
+scalar UavWsnNetwork.routing[0] queueDrops 2
+scalar UavWsnNetwork.routing[0] forwardedPackets 0
+scalar UavWsnNetwork.routing[0] successfulForwards 0
+scalar UavWsnNetwork.routing[0] failedForwards 0
+par UavWsnNetwork.routing[1] typename "\"src.TrlarRouting\""
+par UavWsnNetwork.routing[1] nodeId 1
+par UavWsnNetwork.routing[1] modelFile "\"\""
+par UavWsnNetwork.routing[1] transitionsFile "\"results/transitions.jsonl\""
+par UavWsnNetwork.routing[1] bufferSize 32
+par UavWsnNetwork.routing[1] maxCandidates 5
+par UavWsnNetwork.routing[1] maxRetries 1
+par UavWsnNetwork.routing[1] maxRouteAttempts 6
+par UavWsnNetwork.routing[1] maxHops 30
+par UavWsnNetwork.routing[1] minLinkQuality 0.25
+par UavWsnNetwork.routing[1] minNeighborEnergyRatio 0.05
+par UavWsnNetwork.routing[1] adaptationAlpha 0.2
+par UavWsnNetwork.routing[1] queueHighWatermark 0.8
+par UavWsnNetwork.routing[1] congestionPenalty 0.15
+par UavWsnNetwork.routing[1] delayThreshold 0.25
+par UavWsnNetwork.routing[1] rewardW1 1
+par UavWsnNetwork.routing[1] rewardW2 1
+par UavWsnNetwork.routing[1] rewardW3 0.2
+par UavWsnNetwork.routing[1] rewardW4 1
+par UavWsnNetwork.routing[1] ackTimeout 0.6
+par UavWsnNetwork.routing[1] neighborTimeout 5
+par UavWsnNetwork.routing[1] decisionInterval 0.02
+scalar UavWsnNetwork.routing[1] queueDrops 2
+scalar UavWsnNetwork.routing[1] forwardedPackets 0
+scalar UavWsnNetwork.routing[1] successfulForwards 0
+scalar UavWsnNetwork.routing[1] failedForwards 0
+par UavWsnNetwork typename "\"src.UavWsnNetwork\""
+par UavWsnNetwork numNodes 2
+par UavWsnNetwork areaX 1000
+par UavWsnNetwork areaY 1000
+

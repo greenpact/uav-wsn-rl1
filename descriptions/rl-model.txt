@@ -1,0 +1,243 @@
+System Model and RL-based UAV-Assisted WSN Routing Protocol
+
+1. Network Model
+We consider a UAV-assisted wireless sensor network (WSN) consisting of N = 500 homogeneous sensor nodes randomly and uniformly deployed over a square area of 1000 m × 1000 m. Each node is initialized with energy E0 and is equipped with limited buffer capacity B. Nodes generate sensing data periodically and forward data packets in a multi-hop manner toward temporary UAV contact regions.
+
+A single base station (BS) is located far from the sensing field and is unreachable by direct sensor transmissions. One or multiple UAVs periodically depart from the BS, visit the sensing field, collect data from sensor nodes, and return to the BS. The UAV is also energy constrained and operates under a limited mission duration.
+
+2. Communication and Energy Model
+All sensor nodes use identical radio interfaces with a fixed transmission range R. The energy consumption model follows the classical first-order radio model. The energy required to transmit a k-bit packet over distance d is given by:
+
+E_tx(k,d) = E_elec * k + E_amp * k * d^2
+
+The energy for receiving a packet is:
+
+E_rx(k) = E_elec * k
+
+3. Traffic and Buffer Model
+Each node generates sensing packets according to a periodic process. Each node maintains a FIFO buffer of size B. Packet loss occurs when buffer overflow happens.
+
+4. UAV Contact and Timing Model
+The UAV follows a bounded dynamic trajectory starting and ending at the BS. During each mission, the UAV broadcasts its predicted next-contact schedule to nodes within communication range. Each node maintains an estimate of the remaining time to UAV contact.
+
+5. State Abstraction for Routing
+Each node uses a compact local state representation:
+
+s = [remaining energy ratio, buffer occupancy ratio, neighbor density, link quality class, predicted UAV contact time]
+
+6. Action Space
+The routing action is the selection of one next-hop neighbor among the K best reachable neighbors.
+
+7. Reward Model
+The immediate reward for forwarding a packet is defined as:
+
+r = w1 * successful_delivery − w2 * energy_consumption − w3 * queuing_delay − w4 * packet_drop
+
+8. Offline Centralized Training Model
+A digital twin of the network is implemented at the BS using OMNeT++ 6.3.0 and INET 4.5. The environment includes randomized deployments, traffic patterns, radio conditions, and UAV schedules. A centralized deep Q-learning agent learns a shared routing policy using the abstract state representation.
+
+9. Online Lightweight Adaptation
+During real operation, the learned policy is frozen. Each node only maintains a lightweight neighbor bias table to compensate for local and short-term variations. This avoids online exploration and convergence delay.
+
+10. Optimization Objectives
+The routing protocol aims to minimize energy consumption and end-to-end delay, maximize packet delivery ratio, and extend network lifetime measured by the first-node-death round and overall network survival time.
+
+References:
+Heinzelman et al., LEACH: An Energy-Efficient Communication Protocol for Wireless Microsensor Networks.
+Boyan and Littman, Packet routing in dynamically changing networks: A reinforcement learning approach.
+
+
+
+
+
+
+
+
+Complete and implementable RL-based routing protocol
+Deployment parameters:
+•  Simulator: OMNeT++ 6.3.0 + INET 4.5
+•  N = 500 sensor nodes
+•  Area = 1000 m × 1000 m
+•  Single (or multiple) UAVs
+•  Base station outside the sensing area
+•  UAV starts and ends at BS
+•  Nodes are homogeneous
+•  Energy constrained, buffer constrained
+•  UAV is also energy constrained and has limited mission time
+
+Complete protocol operation:
+The protocol consists of three operational layers:
+Layer-A
+Centralized offline training (at BS only)
+This is performed before real deployment.
+Algorithm 1 — Centralized Offline Training
+
+Input
+
+deployment area A = 1000 × 1000
+N = 400
+radio model
+buffer size B
+UAV dynamic model
+mission duration Tm
+traffic generation model
+node energy model
+
+Step 1 – Environment construction
+At the BS:
+•	build a digital twin in OMNeT++ / Python interface
+•	randomize:
+o	node positions
+o	radio noise
+o	traffic rate
+o	UAV trajectory parameters
+o	mission duration
+o	node failure patterns
+Step 2 – State abstraction
+For each node i, each forwarding event:
+si = [
+   ei / E0,                      // residual energy ratio
+   qi / B,                       // buffer occupancy ratio
+   ρi,                           // neighbor density
+   LQi,j ,                       // link quality class to candidate neighbor j
+   τi                            // predicted time to next UAV contact
+]
+
+Step 3 – Action space
+ai ∈ { select neighbor j | j ∈ NeighborSet(i) }
+
+Step 4 – Reward
+For each forwarded packet:
+r = w1 · IsDelivered
+    − w2 · Econsumed
+    − w3 · Delay
+    − w4 · IsDropped
+
+Step 5 – Learning
+A shared Deep-Q network (or tabular Q for small abstraction) is trained:
+Qθ(s, a)
+using:
+•	experience replay
+•	domain randomization
+•	many independent deployments
+Step 6 – Export model
+After convergence:
+θ*  → exported lightweight model
+This model is identical for all nodes.
+
+Layer-B
+System initialization in OMNeT++
+Algorithm 2 — Initialization
+At simulation start:
+1.	Load pretrained model θ*
+2.	Each node creates:
+BiasTable Δi(j) = 0   for each neighbor j
+3.	UAV loads its mission plan
+4.	UAV broadcasts initial visit schedule
+Layer-C
+Online routing protocol (actual operation)
+This is the real routing protocol.
+
+Complete routing algorithm
+Algorithm 3 — TR-LAR routing at node i
+This code runs inside your custom routing module
+(extending RoutingProtocolBase in INET 4.5).
+Upon packet generation at node i
+enqueue packet into buffer
+Upon routing decision trigger
+(when packet is at head of buffer)
+Step 1 – Local state construction
+si = [
+   ei / E0,
+   qi / B,
+   ρi,
+   LQi,j  (for each neighbor j),
+   τi
+]
+Where:
+•	ei is obtained from EnergyStorage
+•	qi from queue module
+•	ρi from neighbor table
+•	τi from UAV schedule beacons
+Step 2 – Candidate neighbor selection
+CandidateSet = top-K neighbors
+   satisfying:
+      linkQuality ≥ LQmin
+      neighbor residual energy ≥ Emin
+Step 3 – Routing decision
+For each candidate neighbor j:
+Score(j) = Qθ*(si , j) + Δi(j)
+Select:
+nextHop = argmaxj Score(j)
+Step 4 – Packet forwarding
+send packet to nextHop
+Step 5 – Lightweight local adaptation
+When forwarding outcome is observed:
+•	ACK received
+•	or timeout
+•	or next hop drops packet
+Update only:
+Δi(j) ← (1 − α) · Δi(j) + α · f(outcome)
+Where:
+f(outcome) = +1   if successful and timely
+           = −1   if failed or congested
+No Q-table update.
+No gradient descent.
+No exploration.
+Step 6 – Buffer protection
+If:
+qi / B > qhigh
+then:
+•	penalize neighbors whose last forwarding caused delay:
+Δi(j) ← Δi(j) − δ
+UAV side operations
+Algorithm 4 — UAV mission execution
+1.	UAV starts at BS
+2.	UAV follows its mission trajectory
+3.	Every Tb seconds:
+broadcast beacon:
+   predicted next contact times per region
+   contact window
+4.	When UAV enters contact region:
+•	nodes transmit buffered packets directly to UAV
+•	UAV aggregates
+5.	When UAV enters BS region:
+•	UAV uploads all collected data
+🔷 Why this is a routing protocol
+✔ hop-by-hop forwarding
+✔ distributed decision at each node
+✔ no centralized path computation
+✔ UAV does not decide routes
+✔ UAV only provides timing information
+🔷 OMNeT++ 6.3 / INET 4.5 implementation mapping
+You can implement this as:
+New routing module
+src/inet/routing/trlar/TrlarRouting.cc
+src/inet/routing/trlar/TrlarRouting.h
+Derived from:
+inet::RoutingProtocolBase
+Required components
+Component	INET module
+Neighbor table	Ipv4RoutingTable + own neighbor cache
+Energy	EnergyStorage
+Queue	PacketQueue
+Link quality	Packet error + RSSI
+UAV beacons	UDP socket
+State extraction
+In code:
+•	energy:
+getEnergyStorage()->getRemainingEnergy()
+•	queue:
+queue->getNumPackets()
+•	neighbor density:
+neighborSet.size()
+•	τi:
+from last UAV beacon
+Lightweight model inference
+You load the trained weights:
+•	either as a small MLP
+•	or small table
+using:
+•	TinyML runtime
+•	or direct C++ evaluation
+

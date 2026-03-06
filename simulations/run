@@ -1,4 +1,24 @@
-#!/bin/sh
-cd `dirname $0`
-../src/uav_wsn_rl1 -n .:../src $*
-# for shared lib, use: opp_run -l ../src/uav_wsn_rl1 -n .:../src $*
+#!/usr/bin/env bash
+set -eu
+
+cd "$(dirname "$0")"
+
+# Try to load OMNeT++ runtime environment so libopp*.so is discoverable.
+if [ -z "${OMNETPP_ROOT:-}" ] && [ -n "${OMNETPP_HOME:-}" ]; then
+	OMNETPP_ROOT="$OMNETPP_HOME"
+fi
+
+if [ -n "${OMNETPP_ROOT:-}" ] && [ -f "$OMNETPP_ROOT/setenv" ]; then
+	# shellcheck source=/dev/null
+	set +u
+	source "$OMNETPP_ROOT/setenv" -q
+	set -u
+fi
+
+if ! command -v opp_run >/dev/null 2>&1; then
+	echo "OMNeT++ tools are not available. Set OMNETPP_ROOT (or OMNETPP_HOME) and source setenv." >&2
+	echo "Example: export OMNETPP_ROOT=/opt/omnetpp-6.0 && . \"\$OMNETPP_ROOT/setenv\"" >&2
+fi
+
+../uav-wsn-rl1 -n .:../src "$@"
+# for shared lib, use: opp_run -l ../uav-wsn-rl1 -n .:../src "$@"

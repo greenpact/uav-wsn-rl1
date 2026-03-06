@@ -1,0 +1,101 @@
+Objective
+Produce reproducible, scientifically defensible results from uav-wsn-rl1 comparing routing policies under controlled conditions.
+
+Execution Procedure
+1. Freeze the experiment state.
+- Record git commit: git rev-parse HEAD
+- Record environment: python --version, opp_run -v
+- Keep one branch for all experiment runs.
+
+2. Validate setup with smoke tests.
+- Activate environment: source ~/.bashrc
+- Quick run: CONFIG_NAME=QuickTest scripts/run_simulation.sh
+- Confirm files are generated in results/ and no runtime errors.
+
+3. Define hypotheses before running.
+- H1: RL policy improves packet delivery ratio (PDR) over heuristic/no-model baseline.
+- H2: RL policy reduces end-to-end delay.
+- H3: RL policy improves network lifetime (first-node-death time).
+
+4. Define primary metrics and formulas.
+- PDR = delivered_packets / generated_packets
+- Mean delay = mean(packet_delivered.delay)
+- Median delay and 95th percentile delay
+- First node death time = min(node_deaths.t_death)
+- Energy proxy = totalNetworkEnergy (from scalar outputs)
+- Drop rate = 1 - PDR
+
+5. Train RL policy with fixed protocol.
+- Use fixed training seed set and episodes.
+- Example: scripts/train_offline_policy.sh --episodes 20000 --max-steps 240
+- Save artifacts: models/offline_qtable.qtab, models/offline_dqn_policy.mdl, models/offline_training_summary.json
+- Do not retrain between test scenarios unless the protocol explicitly says so.
+
+6. Define comparison conditions.
+- Baseline A: General with empty model (**.routing[*].modelFile = "")
+- RL Q-table: OfflineDqnPolicy
+- RL MLP: OfflineDqnMlp
+- Keep topology size, traffic, and timing equal across conditions.
+
+7. Use adequate replication.
+- Replace low repeat count with at least 30 independent seeds per condition.
+- In omnetpp.ini, set:
+- repeat = 30
+- seed-set = ${repetition}
+- Keep all non-policy parameters identical.
+
+8. Run experiment batches in a fixed order.
+- Run General first, then OfflineDqnPolicy, then OfflineDqnMlp.
+- Use separate result dirs per config (already set).
+- Preserve raw .sca/.vec and CSV outputs; do not overwrite.
+
+9. Perform sanity checks before statistics.
+- Check generated packet counts are non-zero.
+- Check simulation finished all repetitions.
+- Check no missing CSV columns in packet_generated.csv, packet_delivered.csv, node_deaths.csv.
+- Exclude failed runs only with explicit logged reason.
+
+10. Statistical analysis plan.
+- Report mean, std, median, IQR, 95% CI for each metric and condition.
+- Use paired comparisons by seed when possible.
+- Use non-parametric test if normality is weak (e.g., Wilcoxon), otherwise paired t-test.
+- Report effect sizes, not only p-values.
+- Apply correction for multiple comparisons across many metrics.
+
+11. Sensitivity and ablation runs.
+- Sweep at least these factors: node count, traffic interval, UAV speed/contact window.
+- Run one ablation with local adaptation/bias disabled if available.
+- Verify conclusions are robust to parameter variation.
+
+12. Generate figures and tables.
+- Basic plots: python scripts/plot_results.py
+- Add publication plots:
+- PDR boxplots by condition
+- Delay CDFs
+- Lifetime curves (dead nodes over time)
+- Include error bars/CI in all summary plots.
+
+13. Reproducibility package.
+- Archive:
+- omnetpp.ini
+- model files used
+- commit hash
+- all scripts used for run and analysis
+- raw result files and processed tables
+- Document exact commands and timestamps.
+
+14. Validity checklist before claiming results.
+- Same seeds across compared methods.
+- Same network/scenario settings.
+- Sufficient repetitions (n >= 30).
+- Predefined hypotheses and metrics.
+- Statistical significance plus effect size.
+- Sensitivity checks do not reverse conclusions.
+
+Recommended Command Flow (Concrete)
+1. source ~/.bashrc
+2. CONFIG_NAME=QuickTest scripts/run_simulation.sh
+3. scripts/train_offline_policy.sh --episodes 20000 --max-steps 240
+4. Run General, OfflineDqnPolicy, OfflineDqnMlp with repeat=30 in omnetpp.ini
+5. python scripts/plot_results.py
+6. Run your statistical notebook/script and export final tables/figures.

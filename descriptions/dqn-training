@@ -1,0 +1,161 @@
+Offline DQN
+it is used only during offline training at the base station to learn a routing policy.
+The learning environment is a digital twin simulation built using OMNeT++ with the INET Framework.
+The DQN learns:
+
+π(s) = optimal next-hop forwarding decision
+
+Training Environment
+The digital twin environment simulates:
+
+Network parameters:
+
+N = 500 nodes
+Area = 1000 × 1000 m
+Transmission range ≈ 80–100 m
+Traffic: periodic sensing
+
+UAV model:
+
+speed: 10–20 m/s
+mission duration: constrained
+periodic visits
+
+Wireless channel:
+
+log-distance path loss
+packet error probability
+
+Energy model:
+
+first order radio model
+Each training episode corresponds to:
+one UAV mission cycle
+or a fixed number of routing rounds.
+
+DQN State Representation
+
+Each forwarding decision uses a compact state vector.
+State for node i:
+
+s = [
+  Ei/E0,            residual energy ratio
+  Qi/B,             buffer occupancy ratio
+  ρi,               neighbor density
+  LQi,j,            link quality to neighbor j
+  τi                predicted time to UAV contact
+]
+
+Typical ranges:
+
+Feature	Range
+Energy ratio	0–1
+Buffer ratio	0–1
+Neighbor density	0–10
+Link quality	0–1
+UAV contact time	0–T
+
+This state is low dimensional, which helps learning.
+
+Action Space
+
+The action is next-hop neighbor selection.
+Because nodes usually have limited neighbors:
+
+A = {1,2,...,K}
+
+where
+K ≤ 15
+
+During training  map the candidate neighbor set to action indices.
+
+Reward Function
+
+The reward must reflect routing objectives.
+
+The reward used during training is:
+
+r = w1 · DeliverySuccess
+    − w2 · EnergyCost
+    − w3 · DelayPenalty
+    − w4 · PacketDrop
+    − w5 · BufferOverflow
+
+Example weights:
+
+w1 = 5
+w2 = 1
+w3 = 2
+w4 = 5
+w5 = 4
+
+This encourages:
+
+reliable forwarding
+low delay
+low energy use
+
+DQN Architecture
+
+Because the state dimension is small,  use a compact neural network.
+Example architecture:
+Input layer: 5 neurons (equals the number of state features used to describe the routing decision environment
+)
+
+Hidden layer 1
+  64 neurons
+  ReLU activation
+
+Hidden layer 2
+  64 neurons
+  ReLU
+
+Output layer
+  K neurons
+
+Each output corresponds to Q(s,a)
+
+DQN Training Algorithm
+
+Key elements:
+Experience replay
+
+Transitions stored: (s, a, r, s')
+
+Replay buffer:
+  size = 100000
+  Target network
+
+Separate network: Q_target
+
+updated every: 1000 steps
+This stabilizes training.
+
+Update rule
+Loss:
+L = (r + γ max_a' Q_target(s',a') − Q(s,a))²
+
+Discount factor: γ = 0.95
+
+Optimizer: Adam
+learning rate = 0.001
+
+Training Strategy
+
+To make the policy robust use domain randomization.
+
+Each episode randomizes:
+  node deployment
+  traffic rate
+  link noise
+  UAV trajectory
+  node failures
+This ensures the policy generalizes.
+
+Training typically runs for:
+  200k – 500k episodes
+
+Final Output of the DQN
+
+After convergence we obtain:  Qθ*(s,a)
+which represents the optimal routing strategy.

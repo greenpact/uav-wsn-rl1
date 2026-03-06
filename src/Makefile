@@ -31,10 +31,10 @@ PROJECTRELATIVE_PATH = src
 O = $(PROJECT_OUTPUT_DIR)/$(CONFIGNAME)/$(PROJECTRELATIVE_PATH)
 
 # Object files for local .cc, .msg and .sm files
-OBJS = $O/RadioMedium.o $O/SensorNode.o $O/routing/TrlarRouting.o $O/routing/RLAgentInterface.o
+OBJS = $O/RadioMedium.o $O/SensorNode.o $O/routing/TrlarRouting.o $O/routing/RLAgentInterface.o $O/uav/UavModule.o
 
 # Message files
-MSGFILES = messages/RlBeacon.msg
+MSGFILES =
 
 # SM files
 SMFILES =

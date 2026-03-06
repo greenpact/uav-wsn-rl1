@@ -26,6 +26,7 @@ class RadioMedium : public cSimpleModule
     virtual void forwardMessage(cMessage *msg, int srcIdx, double sx, double sy, double srange, int txRadio);
     // query stored position for node index (sensors 0..numSensors-1, uav=numSensors, bs=numSensors+1)
     void getPosition(int idx, double &x, double &y) const;
+    bool recipientListens(cModule *recipient, int txRadio) const;
     virtual void finish() override;
     void handleRoundTimer();
 };
