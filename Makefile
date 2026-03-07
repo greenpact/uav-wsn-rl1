@@ -92,7 +92,7 @@ $O/$(TARGET): $(OBJS)  $(wildcard $(EXTRA_OBJS)) Makefile $(CONFIGFILE)
 	@echo Creating executable: $@
 	$(Q)$(CXX) $(LDFLAGS) -o $O/$(TARGET) $(OBJS) $(EXTRA_OBJS) $(AS_NEEDED_OFF) $(WHOLE_ARCHIVE_ON) $(LIBS) $(WHOLE_ARCHIVE_OFF) $(OMNETPP_LIBS)
 
-.PHONY: all clean cleanall depend msgheaders smheaders
+.PHONY: all clean cleanall depend msgheaders smheaders restore-chat-session
 
 # disabling all implicit rules
 .SUFFIXES :
@@ -130,6 +130,9 @@ help:
 	@echo "$$HELP_TARGETS"
 	@echo "$$HELP_VARIABLES"
 	@echo "$$HELP_EXAMPLES"
+
+restore-chat-session:
+	@bash scripts/restore_copilot_chat_session.sh
 
 # include all dependencies
 -include $(OBJS:%=%.d) $(MSGFILES:%.msg=$O/%_m.h.d)

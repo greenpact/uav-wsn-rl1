@@ -81,3 +81,7 @@ Generated policy artifacts are saved under `models/` and can be selected via `om
   - OMNeT++ runtime library path is not loaded; source OMNeT++ `setenv`
 - NED type resolution errors
   - Ensure `-n .:src` is present (already included in provided scripts)
+- Copilot chat appears reset after Codespace restart
+  - Cause: Copilot chat sessions are stored in VS Code remote `workspaceStorage`, and sometimes the active slot changes while old sessions remain in a previous slot.
+  - Auto-fix: opening this workspace now runs `scripts/restore_copilot_chat_session.sh` automatically via `.vscode/tasks.json`.
+  - Recovery: run `make restore-chat-session` (or `bash scripts/restore_copilot_chat_session.sh --force` to merge even when the current slot is non-empty).

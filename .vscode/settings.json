@@ -1,6 +1,7 @@
 {
     "workbench.colorTheme": "Default Light Modern",
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "task.allowAutomaticTasks": "on",
     "terminal.integrated.env.linux": {
         "OMNETPP_ROOT": "/workspaces/omnetpp"
     }
