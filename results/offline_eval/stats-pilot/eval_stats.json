@@ -1,0 +1,101 @@
+{
+  "input_root": "results/offline_eval",
+  "rows": [
+    {
+      "config": "Eval_OfflineMlp",
+      "metric": "failedForwards",
+      "n": 400,
+      "mean": 30.315,
+      "std": 21.524265609424695,
+      "ci95": 2.10937802972362
+    },
+    {
+      "config": "Eval_OfflineMlp",
+      "metric": "forwardedPackets",
+      "n": 400,
+      "mean": 368.3175,
+      "std": 243.9095659967271,
+      "ci95": 23.903137467679255
+    },
+    {
+      "config": "Eval_OfflineMlp",
+      "metric": "queueDrops",
+      "n": 400,
+      "mean": 4.345,
+      "std": 9.43522834035226,
+      "ci95": 0.9246523773545215
+    },
+    {
+      "config": "Eval_OfflineMlp",
+      "metric": "successfulForwards",
+      "n": 400,
+      "mean": 352.915,
+      "std": 234.3337973841828,
+      "ci95": 22.964712143649912
+    },
+    {
+      "config": "Eval_OfflineMlp",
+      "metric": "uavCollectedPackets",
+      "n": 1,
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95": 0.0
+    },
+    {
+      "config": "Eval_OfflineMlp",
+      "metric": "uavUploadedPackets",
+      "n": 1,
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95": 0.0
+    },
+    {
+      "config": "Eval_OfflineQTable",
+      "metric": "failedForwards",
+      "n": 400,
+      "mean": 30.315,
+      "std": 21.524265609424695,
+      "ci95": 2.10937802972362
+    },
+    {
+      "config": "Eval_OfflineQTable",
+      "metric": "forwardedPackets",
+      "n": 400,
+      "mean": 368.3175,
+      "std": 243.9095659967271,
+      "ci95": 23.903137467679255
+    },
+    {
+      "config": "Eval_OfflineQTable",
+      "metric": "queueDrops",
+      "n": 400,
+      "mean": 4.345,
+      "std": 9.43522834035226,
+      "ci95": 0.9246523773545215
+    },
+    {
+      "config": "Eval_OfflineQTable",
+      "metric": "successfulForwards",
+      "n": 400,
+      "mean": 352.915,
+      "std": 234.3337973841828,
+      "ci95": 22.964712143649912
+    },
+    {
+      "config": "Eval_OfflineQTable",
+      "metric": "uavCollectedPackets",
+      "n": 1,
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95": 0.0
+    },
+    {
+      "config": "Eval_OfflineQTable",
+      "metric": "uavUploadedPackets",
+      "n": 1,
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95": 0.0
+    }
+  ]
+}

@@ -1,0 +1,343 @@
+Parallel Offline OMNeT++ Data Pipeline: End-to-End Implementation Plan
+Date: 2026-03-08
+Repository: greenpact/uav-wsn-rl1
+Branch intent: Parallel, independent offline-data pipeline for publication-grade RL workflow
+
+====================================================================
+1. Objective and Scientific Positioning
+====================================================================
+
+Goal:
+Build a separate OMNeT++-based offline data generation pipeline that runs in parallel and independently from the existing setup, while preserving comparability with the current network/routing implementation.
+
+Scientific requirement:
+- No data leakage between dataset generation, training, and final evaluation.
+- No mixed transitions across runs/seeds/configurations.
+- Offline RL training must consume fixed datasets generated from OMNeT++ logs.
+- Final policy evaluation must be inference-only in OMNeT++ (no online training updates).
+
+Core separation (three-lane architecture):
+- Lane A (existing, unchanged): current workflow in omnetpp.ini and existing outputs.
+- Lane B (new): offline dataset generation with behavior policies, modelFile="".
+- Lane C (new/existing): frozen-policy evaluation (OfflineDqnPolicy / OfflineDqnMlp or equivalent).
+
+====================================================================
+2. Why This Is Feasible in Current Codebase
+====================================================================
+
+- Same NED network can run different INI configs independently.
+- Routing supports no-model mode via fallback heuristic scoring.
+- Transition logging already exists and can be extended to full RL tuples.
+- UAV mobility already implements guided Gauss-Markov with energy/degree/distance targeting.
+
+Current risk to fix:
+- transitions file currently opens in append mode and can mix datasets if path is shared.
+
+====================================================================
+3. End-to-End Pipeline Specification
+====================================================================
+
+Phase 0: Freeze Interface Contract
+- Freeze 8D feature schema and order:
+  [energy, queue, density, tau, lq, neighEnergy, neighFailRatio, uavDistance]
+- Introduce schema_version constant shared across runtime/training.
+- Runtime loader must fail-fast in evaluation mode on feature/model mismatch.
+- Document schema in one authoritative text file and metadata.
+
+Deliverables:
+- Feature schema spec
+- Runtime validation checks
+- Training-side schema validator
+
+Acceptance gate:
+- Training schema, exported model schema, and runtime schema match exactly.
+
+
+Phase 1: Build Parallel OMNeT++ Offline Configs
+- Create a dedicated INI file for offline data collection (e.g., omnetpp_offline.ini).
+- Keep current omnetpp.ini untouched for backward compatibility.
+- Use unique result root:
+  results/offline_dataset/<experiment>/run-${repetition}/
+- Use unique transitions path per run:
+  **.routing[*].transitionsFile = "results/offline_dataset/<experiment>/run-${repetition}/transitions.jsonl"
+- Add dedicated configs:
+  - [Config OfflineData_BehaviorUtility]
+  - [Config OfflineData_BehaviorStochastic]
+  - [Config OfflineData_AblationNoUav]
+
+Deliverables:
+- New INI file with isolated configs
+- No overlap with existing result-dir/output files
+
+Acceptance gate:
+- Running offline configs does not create/modify existing baseline/policy result folders.
+
+
+Phase 2: Data Forwarding Mechanisms (Before RL Training)
+- RL model must not be used before training (modelFile="").
+- Use behavior policies for data generation:
+
+Policy A (primary): Utility + epsilon-greedy
+- Utility score per candidate:
+  U = a*lq + b*neighborEnergy - c*queue - d*failRatio - e*uavDistance
+- Choose argmax(U) with probability (1-epsilon), random candidate with epsilon.
+- Epsilon sweep across runs: {0.05, 0.10, 0.20}.
+
+Policy B (secondary): Softmax sampling
+- p(action i) = exp(Ui/T) / sum_j exp(Uj/T)
+- Temperature sweep: T in {0.2, 0.5, 1.0}.
+
+Policy C (control baseline): deterministic greedy heuristic
+- No exploration, used only as control for comparison.
+
+Scientific rationale:
+- Provides broad but realistic state-action coverage for offline RL.
+- Avoids circular dependency on an untrained RL policy.
+
+Deliverables:
+- Configurable behavior policy mode/tag
+- Per-transition policy_tag logging
+
+Acceptance gate:
+- Dataset contains diverse action support and non-trivial exploration coverage.
+
+
+Phase 3: Mobility Mechanisms (Before RL Training)
+- Keep existing guided Gauss-Markov UAV mobility as baseline policy.
+- Add two mobility variants to improve dataset coverage:
+
+Mobility M1: GGM-Conservative
+- Lower stochastic noise, smoother paths, stronger guidance bias.
+
+Mobility M2: GGM-Exploratory
+- Higher stochastic noise, broader field traversal.
+
+Mobility M3: Deterministic sweep (control)
+- Fixed geometric sweep/round-robin trajectory.
+
+Important:
+- Mobility mode must be explicit in run metadata.
+- Do not mix mobility modes in a single experiment table unless stratified.
+
+Deliverables:
+- Mobility-mode parameterization via INI
+- Metadata tag for mobility mode in each run
+
+Acceptance gate:
+- Mobility variants produce distinguishable spatial coverage profiles.
+
+
+Phase 4: Transition Logging Contract Upgrade
+- Extend current event logs to full decision transitions:
+
+Required fields per transition line:
+- run_id
+- seed
+- config_name
+- policy_tag
+- mobility_tag
+- t
+- node_id
+- packet_id
+- state (8D)
+- candidates (list of candidate feature vectors)
+- action_index
+- action_features
+- reward
+- next_state_context
+- next_candidates
+- done
+- event_quality {ack, delay, drop, retries}
+- schema_version
+
+Run-level metadata file (metadata.json) must include:
+- git commit hash
+- omnetpp version
+- ini/config hash
+- feature schema hash
+- topology/traffic/uav parameters
+
+Deliverables:
+- Transition JSONL writer upgrade
+- Metadata writer
+
+Acceptance gate:
+- 100% required field presence and successful JSON parsing.
+
+
+Phase 5: Offline Dataset QA and Splitting
+- Build deterministic splits by seed/scenario, never by random row shuffle.
+- Suggested split:
+  train seeds 0-59, val 60-79, test 80-99.
+- QA checks:
+  - Missing fields == 0
+  - Feature bounds within [0,1] where expected
+  - Action entropy above minimum threshold
+  - No duplicate packet trajectory corruption
+  - No seed overlap across splits
+
+Deliverables:
+- Dataset builder + QA report
+- Split manifest with hashes
+
+Acceptance gate:
+- All QA checks pass; split manifest is immutable and reproducible.
+
+
+Phase 6: Offline DQN Training (Dataset-Only)
+- Train only from fixed OMNeT++ dataset artifacts.
+- No online simulator interaction during gradient updates.
+- Export:
+  - offline_qtable.qtab
+  - offline_dqn_policy.mdl
+- Save training summary:
+  - hyperparameters
+  - dataset IDs/hashes
+  - convergence metrics
+  - model checksum
+
+Deliverables:
+- Training script consuming dataset split files
+- Exported model artifacts + summary
+
+Acceptance gate:
+- Re-running with same seed/config reproduces equivalent metrics/artifacts.
+
+
+Phase 7: Independent Frozen-Policy Evaluation in OMNeT++
+- Evaluate with separate configs and separate output dirs:
+  - Eval_OfflineQTable
+  - Eval_OfflineMlp
+  - Baseline heuristic/control configs
+- Evaluation runs must use frozen models only (no updates).
+- Compare against accepted baselines under identical scenario distributions.
+
+Primary metrics:
+- Packet delivery ratio (PDR)
+- End-to-end delay
+- Energy per delivered packet/bit
+- Network lifetime milestones (FND/HND/LND)
+- UAV collection/upload efficiency
+
+Deliverables:
+- Evaluation config set
+- Aggregated metrics tables per seed
+
+Acceptance gate:
+- Complete per-seed results generated for all methods.
+
+
+Phase 8: Statistical Analysis and Publication Reporting
+- Use >=30 seeds for pilot, ideally >=100 for publication robustness.
+- Report mean, std, and 95% confidence intervals.
+- Use paired tests where possible; include effect size.
+- Required ablations:
+  - without UAV distance feature
+  - without tau
+  - without exploratory behavior policy
+  - mobility variant sensitivity
+
+Deliverables:
+- Statistical analysis notebook/script
+- Reproducible plots and tables
+
+Acceptance gate:
+- Claims supported by significance and effect size, not only mean values.
+
+====================================================================
+4. OMNeT++ Configuration Requirements (Publication-Grade)
+====================================================================
+
+Topology and environment (core reference setup):
+- Area: 1000m x 1000m
+- Sensor nodes: 400
+- UAV: 1
+- Base station: 1
+- Runtime: fixed sim-time-limit across compared methods (e.g., 5000s)
+
+Routing and traffic consistency:
+- Keep energy/radio/packet model parameters fixed across methods.
+- Change only the intended treatment variable per experiment.
+- Use dedicated result-dir and transitions path per config/run.
+
+Output organization:
+- results/offline_dataset/<experiment>/run-<seed>/
+  - transitions.jsonl
+  - metadata.json
+  - scalars (.sca)
+  - vectors/logs if enabled
+
+Reproducibility controls:
+- seed-set mapped from repetition
+- commit hash captured
+- config snapshot/hash captured
+- environment/version captured
+
+====================================================================
+5. Concrete Directory and File Plan
+====================================================================
+
+New/updated files proposed:
+- omnetpp_offline.ini
+- scripts/run_offline_dataset_collection.sh
+- training/build_offline_dataset.py
+- training/train_offline_dqn_from_dataset.py
+- training/dataset_schema_v1.json
+- training/offline_dataset_manifest.json (generated)
+- descriptions/offline-pipeline-publication-spec.txt (optional)
+
+Do not modify/remove existing workflow artifacts unless explicitly required.
+
+====================================================================
+6. Experimental Matrix (Minimum Defensible Set)
+====================================================================
+
+Factors:
+- Forwarding behavior policy: {Utility-eps, Utility-softmax, Greedy-control}
+- Mobility mode: {GGM-conservative, GGM-exploratory, Deterministic-sweep}
+- Seed: 0..99 (or at least 0..29 for pilot)
+
+Example matrix size:
+- 3 policies x 3 mobility modes x 100 seeds = 900 runs for dataset generation
+
+Training/evaluation separation:
+- Generate datasets from predefined behavior policy subsets.
+- Train offline once per selected dataset condition.
+- Evaluate frozen models under common benchmark conditions.
+
+====================================================================
+7. Acceptance Criteria for "Scientifically Justifiable" Claim
+====================================================================
+
+You can claim a scientifically acceptable offline RL pipeline only when all are true:
+- Data generation and policy evaluation are isolated with no shared append logs.
+- Model training is dataset-only (offline) and reproducible.
+- Runtime evaluation is inference-only with schema checks enforced.
+- Statistical reporting includes uncertainty and significance/effect size.
+- Baselines and ablations are reported under matched settings.
+
+If any item above is missing, claim should be downgraded to engineering prototype.
+
+====================================================================
+8. Immediate Execution Steps (Practical Start)
+====================================================================
+
+Step 1:
+Create omnetpp_offline.ini with isolated OfflineData_* configs and unique transitions paths.
+
+Step 2:
+Instrument routing logger to emit full (s, a, r, s', done)-style transitions with metadata tags.
+
+Step 3:
+Add dataset collection batch script for multi-seed runs and per-run folder creation.
+
+Step 4:
+Implement dataset QA/splitting script and produce immutable train/val/test manifests.
+
+Step 5:
+Run pilot (>=30 seeds), inspect QA reports, adjust policy/mobility sweep for coverage gaps.
+
+Step 6:
+Run full collection/training/evaluation matrix and generate publication tables.
+
+End of plan.

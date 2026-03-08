@@ -1,0 +1,313 @@
+Optimized OMNeT++ Offline Data Generator Specification (8D Preserved)
+Date: 2026-03-08
+Scope: Comparison + optimized model for publication-grade offline DQN data generation
+
+====================================================================
+A. Comparison: Suggested Model vs Proposed Parallel Pipeline
+====================================================================
+
+Reference files compared:
+- training/data-gen-model-description.txt (original suggested model)
+- training/PARALLEL_OFFLINE_PIPELINE_IMPLEMENTATION_PLAN.txt (proposed parallel model)
+
+1) Areas where the suggested model is strong
+- Clear digital-twin framing in OMNeT++ for offline dataset generation.
+- Good layered decomposition (physical, node, UAV mobility, traffic, data collector).
+- Includes domain randomization concept.
+- Includes a reward structure aligned with routing outcomes.
+- Recognizes need to separate training and evaluation stages.
+
+2) Gaps in the suggested model that reduce publication rigor (as-is)
+- State definition is 5D in the original text, while this project requires fixed 8D features.
+- Dataset schema is under-specified (CSV example lacks candidate-set context, run metadata, seed/config identifiers, and quality fields needed for reproducibility).
+- No strict leakage guard between collection/train/eval (no deterministic split by seed/scenario).
+- No explicit per-run output isolation (risk of mixed append logs).
+- No hard reproducibility contract (commit hash, config hash, schema version, environment capture).
+- Baseline routing is listed conceptually but behavior-policy design for coverage is not concretely parameterized.
+
+3) Areas where the parallel pipeline is stronger
+- Three-lane isolation architecture (existing path, dataset-generation path, frozen-policy evaluation path).
+- Explicit reproducibility and anti-leakage controls.
+- Detailed transition contract with metadata and QA gates.
+- Statistical reporting requirements and ablation plan.
+- Independent, per-run result directories and manifest/hash tracking.
+
+4) Improvement opportunities from the suggested model to incorporate
+- Keep richer physical realism options and document them as scenario tiers.
+- Include explicit traffic process families (periodic + Poisson) as controlled factors.
+- Include trajectory-family sweeps for UAV mobility diversity.
+- Keep realistic episode sizing targets and mission-cycle interpretation.
+
+Conclusion:
+The optimized model should keep the publication controls of the parallel pipeline and absorb the scenario richness of the suggested model, while preserving the existing 8D feature definition unchanged.
+
+====================================================================
+B. Optimized Unified Model (Final Recommendation)
+====================================================================
+
+Non-negotiable constraint:
+- Keep 8D features exactly as-is:
+  [energy, queue, density, tau, lq, neighEnergy, neighFailRatio, uavDistance]
+
+B1) Architectural principle
+Use a parallel, independent OMNeT++ data-generation lane that reuses the existing network implementation for comparability but isolates all offline-data artifacts.
+
+Lanes:
+- Lane A: existing workflow (unchanged).
+- Lane B: offline dataset generation (no trained RL model loaded).
+- Lane C: frozen policy evaluation only.
+
+B2) OMNeT++ simulation structure for Lane B
+Network:
+- Reuse src.UavWsnNetwork unless instrumentation overhead forces a separate offline network.
+- Keep topology constants aligned with existing setup unless explicitly varied as an experiment factor.
+
+Dedicated config file:
+- omnetpp_offline.ini
+
+Required configs:
+- [Config OfflineData_BehaviorUtility]
+- [Config OfflineData_BehaviorStochastic]
+- [Config OfflineData_AblationNoUav]
+
+Per-run isolation:
+- result-dir = results/offline_dataset/<experiment>/run-${repetition}
+- transitions file per run:
+  **.routing[*].transitionsFile = "results/offline_dataset/<experiment>/run-${repetition}/transitions.jsonl"
+
+B3) Forwarding mechanism before RL training (required)
+Because RL policy is not trained yet, data collection must use behavior policies only.
+
+Policy P1 (primary): Utility + epsilon-greedy
+- Utility per candidate j:
+  Uj = a*lqj + b*neighEnergyj - c*queue - d*neighFailj - e*uavDistance
+- Action:
+  argmax(U) with probability 1-epsilon, random candidate with epsilon.
+- Epsilon sweep: {0.05, 0.10, 0.20}.
+
+Policy P2: Utility + softmax sampling
+- p(j) = exp(Uj/T) / sum_k exp(Uk/T)
+- Temperature sweep: {0.2, 0.5, 1.0}.
+
+Policy P3 (control): deterministic greedy utility
+- No exploration; used as baseline coverage comparator.
+
+Episode-level heterogeneous policy switching (required)
+- Do not use a single behavior policy for all episodes.
+- Randomly assign one policy profile per episode from a predefined pool.
+- Example episode sequence:
+  - Episode 1: epsilon-greedy (epsilon=0.10)
+  - Episode 2: softmax (T=0.50)
+  - Episode 3: epsilon-greedy (epsilon=0.20)
+  - Episode 4: greedy baseline
+- This produces a heterogeneous offline dataset with broader policy support.
+
+Utility-bias mitigation via explicit exploration episodes (required)
+- To reduce utility-function-induced sampling bias, reserve a subset of episodes for high exploration.
+- Set epsilon=0.25 for designated exploration-heavy episodes.
+- Recommended schedule:
+  - 60% standard episodes: epsilon in {0.05, 0.10, 0.20} or softmax T in {0.2, 0.5, 1.0}
+  - 25% high-exploration episodes: epsilon=0.25
+  - 15% greedy baseline episodes
+- Log `policy_mode`, `epsilon_or_temperature`, and `exploration_tier` in metadata and transition records.
+
+Concrete utility initialization (for reproducible starting point)
+- Use normalized utility with initial coefficients:
+  - a=1.7 (link quality)
+  - b=0.9 (neighbor energy)
+  - c=1.1 (queue pressure)
+  - d=1.0 (neighbor failure ratio)
+  - e=0.35 (UAV distance)
+- Keep coefficients fixed within an experiment block; change them only as an explicit ablation.
+
+B4) Mobility mechanism before RL training (required)
+Keep current guided GGM as base, add controlled variants:
+
+M1: GGM-conservative
+- Lower stochasticity, stronger guidance weighting.
+
+M2: GGM-exploratory
+- Higher stochasticity and broader traversal.
+
+M3: Deterministic sweep/grid
+- Fixed trajectory control baseline.
+
+All mobility modes must be tagged in run metadata.
+
+B5) Traffic generation and scenario randomization
+Traffic models:
+- Periodic sensing and Poisson sensing as separate factors.
+
+Domain randomization factors (controlled ranges):
+- Node deployment seed.
+- Traffic load level.
+- Link perturbation/noise profile.
+- UAV speed profile.
+- Failure injection profile.
+
+Important:
+- Change one factor block at a time for interpretability.
+- Record every factor value in metadata.json.
+
+B6) Transition data contract (publication minimum)
+Each decision transition JSONL record must include:
+- run_id, seed, config_name
+- policy_tag, mobility_tag
+- t, node_id, packet_id
+- state (8D)
+- candidates (list of 8D feature vectors)
+- action_index, action_features
+- reward
+- next_state_context, next_candidates
+- done
+- event_quality {ack, delay, drop, retries}
+- schema_version
+
+Run-level metadata.json must include:
+- git_commit
+- omnetpp_version
+- ini/config hash
+- feature schema hash/version
+- topology/traffic/uav parameters
+
+B7) Episode and dataset scale
+Episode definition:
+- One UAV mission cycle (or fixed sim-time window), consistently defined per experiment.
+
+Episode policy assignment rule:
+- At episode start, sample one policy profile from the predefined policy pool.
+- Keep policy fixed within the episode; resample at next episode.
+- Use stratified randomization so each policy profile reaches target episode counts.
+
+Scale targets:
+- Pilot: >= 30 seeds per condition.
+- Publication-grade: >= 100 seeds per core condition where feasible.
+- Total transitions: target 10^6+, with coverage QA enforced.
+
+B8) QA and leakage control
+Mandatory QA gates before training:
+- Required field completeness == 100%.
+- JSON parse success == 100%.
+- Feature bounds valid for normalized dimensions.
+- Action diversity/entropy above threshold.
+- No train/val/test seed overlap.
+- Policy support coverage check: each policy profile has sufficient sample count.
+- High-exploration coverage check: epsilon=0.25 episodes contribute measurable tail-state/action support.
+
+Split policy:
+- Deterministic split by seed/scenario (not random row split).
+
+B9) Training and evaluation boundary
+Training:
+- Offline only, using fixed dataset snapshots.
+- No online OMNeT++ interaction during gradient updates.
+
+Evaluation:
+- Frozen model inference only in OMNeT++.
+- Compare with non-RL baselines under matched conditions.
+
+B10) Statistical reporting
+Report at minimum:
+- mean, std, 95% CI
+- paired significance test where applicable
+- effect size
+- ablations (including no-UAV-feature influence in policy logic while preserving 8D schema format)
+
+====================================================================
+C. Implementation Delta (What to Add Next)
+====================================================================
+
+1) Add `omnetpp_offline.ini` with isolated `OfflineData_*` configs.
+2) Add behavior-policy scheduler parameters:
+  - `policyPool = {eps_0.05, eps_0.10, eps_0.20, eps_0.25, softmax_0.2, softmax_0.5, softmax_1.0, greedy}`
+  - `policyMixWeights = {..}`
+  - `episodePolicyMode = random_stratified`
+3) Extend routing decision logic for episode-fixed policy selection and per-episode resampling.
+4) Extend transition logger to full JSONL transition contract including:
+  - `policy_mode`, `epsilon_or_temperature`, `exploration_tier`.
+5) Add run-level metadata writer with:
+  - git commit hash, omnet version, config hash, schema version, policy mix, mobility tag.
+6) Add batch collection script (`scripts/run_offline_dataset_collection.sh`) to execute multi-seed runs and isolate outputs per run.
+7) Add dataset builder/QA script (`training/build_offline_dataset.py`) implementing:
+  - deterministic seed-based split,
+  - policy-support coverage checks,
+  - exploration-coverage checks,
+  - leakage checks.
+8) Run pilot collection (>=30 seeds) and verify QA report gates.
+9) Freeze dataset manifest + hashes.
+10) Run offline training from fixed dataset only and export frozen artifacts.
+11) Evaluate frozen policies in separate eval configs with statistical reporting.
+
+Full-scale scenario planning reference:
+- See `training/FULL_SCALE_SCENARIO_CATALOG.txt` for the publication-grade scenario matrix,
+  acceptance gates, and execution order before final full-scale runs.
+
+====================================================================
+D. Final Decision
+====================================================================
+
+Adopt the optimized unified model above.
+- It preserves the required 8D features exactly.
+- It integrates the scenario richness from the suggested model.
+- It keeps strict reproducibility, anti-leakage, and publication-grade rigor from the parallel pipeline plan.
+
+====================================================================
+E. Operational Clarifications (Requested Checks)
+====================================================================
+
+1) Forwarding/routing model to be used
+- Use behavior-policy routing for data generation (no trained RL model loaded):
+  - `modelFile = ""` during dataset generation.
+  - Candidate next-hop ranking is utility-based over the existing 8D action features.
+- Episode-level random switching is required:
+  - At each episode start, randomly choose one policy profile and keep it fixed for that episode.
+  - Allowed profiles:
+    - epsilon-greedy (`epsilon in {0.05, 0.10, 0.20, 0.25}`)
+    - softmax (`T in {0.2, 0.5, 1.0}`)
+    - greedy baseline
+- Utility-bias mitigation requirement:
+  - Include explicit high-exploration episodes using `epsilon=0.25`.
+  - Recommended minimum: 25% of episodes as `epsilon=0.25`.
+
+2) Single-hop vs multi-hop forwarding
+- Sensor-node forwarding is multi-hop among sensor candidates.
+- UAV can be selected as a candidate relay when available/feasible.
+- BS is sink endpoint; packets are ultimately delivered to BS (directly or via relay chain/UAV upload leg).
+- Therefore, the model is hybrid multi-hop forwarding with opportunistic UAV assistance.
+
+3) UAV mobility model
+- Baseline mobility for data generation:
+  - Guided Gauss-Markov (GGM), already aligned with energy/degree/distance guidance intent.
+- Required mobility variants for coverage and robustness:
+  - `GGM-conservative`: lower stochasticity, smoother paths.
+  - `GGM-exploratory`: higher stochasticity, wider traversal.
+  - `Deterministic sweep/grid`: control trajectory baseline.
+- Each run must log `mobility_tag` and all UAV timing/speed parameters in metadata.
+
+4) Complete timing: data generation to reception at BS
+
+Timing chain per packet (event-level):
+- `t0`: packet generated at source sensor (application layer).
+- `t1`: enqueued at local routing buffer.
+- `t2`: routing decision event selects next hop from candidate set.
+- `t3`: transmission starts to selected next hop (sensor or UAV).
+- `t4`: reception at next hop (or failure timeout).
+- `t5`: ACK processed at sender; reward/outcome event finalized for this hop.
+- `t6...tn`: repeat steps `t1..t5` for subsequent hops if packet not yet delivered.
+- `tu`: if packet reaches UAV, it is buffered onboard until UAV enters BS upload region.
+- `tb`: UAV uploads packet to BS (or packet reaches BS directly via network path).
+- `tdone`: terminal outcome recorded (`delivered` or `dropped`).
+
+Required recorded timing fields (minimum):
+- `t_gen` (generation time)
+- `t_decision` (per-hop decision time)
+- `t_tx` / `t_rx` (hop transmission/reception times)
+- `t_ack` (ACK or timeout resolution time)
+- `t_uav_pickup` (if UAV path used)
+- `t_bs_receive` (final BS reception time)
+- `delay_e2e = t_bs_receive - t_gen` for delivered packets
+
+Episode-level timing policy:
+- One episode is one mission-cycle-aligned simulation window (or fixed equivalent window), consistently applied.
+- Use fixed decision interval, ACK timeout, beacon interval, and mission cycle parameters within each experiment condition.
+- Any timing parameter change must define a new experiment condition and be captured in metadata.

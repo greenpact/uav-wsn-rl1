@@ -1,0 +1,116 @@
+/**
+ * MODEL: Guided Gauss-Markov (GGM) with Dynamic DQN Bias
+ * PURPOSE: UAV-WSN Routing where UAV is attracted to High-Q Nodes
+ * ----------------------------------------------------------------
+ * 1. MATHEMATICAL FORMULATION
+ * 
+ * The velocity and heading of the UAV at time 't' are updated based on:
+ *   v_t = alpha * v_{t-1} + (1 - alpha) * v_bias + sqrt(1 - alpha^2) * Gaussian(0, sigma_v)
+ *   d_t = alpha * d_{t-1} + (1 - alpha) * d_bias + sqrt(1 - alpha^2) * Gaussian(0, sigma_d)
+ * 
+ * WHERE:
+ *   alpha [0, 1]: Tuning parameter for "Smoothness".
+ *      - If alpha -> 1: Movement is smooth, heavy momentum (Natural flight).
+ *      - If alpha -> 0: Movement is erratic, instant response to DQN (Unnatural).
+ *   v_bias / d_bias: The target speed and heading toward the "Best Node".
+ * 
+ * 2. PARAMETER DERIVATION FOR NATURAL FLIGHT
+ * 
+ * To ensure the UAV obeys physical constraints (turning radius R):
+ *   d_max_change = v_t / R  (radians per second)
+ *   We derive 'alpha' such that: (1 - alpha) * |d_bias - d_{t-1}| <= d_max_change.
+ *   Commonly, alpha is set between 0.75 and 0.85 for fixed-wing or smooth quadcopter flight.
+ */
+
+// --- PSEUDOCODE / C++ IMPLEMENTATION LOGIC FOR OMNET++ ---
+
+#include <cmath>
+#include <vector>
+#include <omnetpp.h>
+
+struct Node {
+    int id;
+    double x, y;
+    double energy;
+    int degree;
+};
+
+class GGM_Mobility {
+private:
+    double alpha = 0.8;      // Smoothness factor
+    double v_current = 10.0; // m/s
+    double d_current = 0.0;  // radians
+    double sigma = 0.5;      // Standard deviation for noise
+    
+    // Position
+    double posX, posY;
+
+public:
+    void calculateNextWaypoint(std::vector<Node>& sensorNodes, const QTable& dqnTable) {
+        
+        // 1. DYNAMIC BIAS SELECTION (DQN INTEGRATION)
+        Node* targetNode = nullptr;
+        double maxQ = -999999.0;
+
+        for (auto& node : sensorNodes) {
+            // Construct state: [Energy, Degree, DistanceToUAV]
+            double dist = sqrt(pow(node.x - posX, 2) + pow(node.y - posY, 2));
+            State s = {node.energy, node.degree, dist};
+            
+            // Query the offline DQN table
+            double qValue = dqnTable.lookup(s); 
+
+            if (qValue > maxQ) {
+                maxQ = qValue;
+                targetNode = &node;
+            }
+        }
+
+        if (targetNode) {
+            // 2. CALCULATE BIAS VECTORS
+            double dx = targetNode->x - posX;
+            double dy = targetNode->y - posY;
+            
+            double d_bias = atan2(dy, dx); 
+            double v_bias = 15.0; // Desired cruising speed m/s
+
+            // 3. GAUSS-MARKOV STOCHASTIC UPDATE (Mathematical Kernel)
+            double n_v = normal(0, sigma); // OMNeT++ RNG for Gaussian noise
+            double n_d = normal(0, sigma);
+
+            // Update Velocity
+            v_current = (alpha * v_current) + 
+                        ((1 - alpha) * v_bias) + 
+                        (sqrt(1 - pow(alpha, 2)) * n_v);
+
+            // Update Heading
+            d_current = (alpha * d_current) + 
+                        ((1 - alpha) * d_bias) + 
+                        (sqrt(1 - pow(alpha, 2)) * n_d);
+
+            // 4. BOUNDARY CHECKING & COORDINATE UPDATE
+            posX += v_current * cos(d_current) * stepTime;
+            posY += v_current * sin(d_current) * stepTime;
+            
+            // Apply OMNeT++ Constraint (Simulation Area)
+            handleBoundary(posX, posY);
+        }
+    }
+
+    void handleBoundary(double& x, double& y) {
+        // Reflection logic: if x > areaX, d_current = PI - d_current
+        // This ensures the UAV stays in the WSN field.
+    }
+};
+
+/**
+ * 5. ANALYTICAL NOTES FOR IMPLEMENTATION:
+ * 
+ * - Multi-hop Trigger: When the UAV (via GGM) enters the communication range of a 
+ *   high-degree node, the node switches its "Next Hop" in the C++ routing module 
+ *   from a neighbor sensor to the UAV's MAC address.
+ * 
+ * - Energy Constraint: In the DQN reward function used to build the table, 
+ *   ensure you penalize nodes with < 10% energy heavily so the GGM bias 
+ *   never pulls the UAV toward "dying" nodes.
+ */

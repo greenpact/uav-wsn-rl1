@@ -1,0 +1,17 @@
+{
+  "run_number": 0,
+  "config_name": "Eval_OfflineQTable",
+  "network": "UavWsnNetwork",
+  "git_commit": "unknown",
+  "omnetpp_version": "unknown",
+  "config_hash": "unknown",
+  "mobility_tag": "ggm-base",
+  "schema_version": 1,
+  "feature_order": ["energy","queue","density","tau","lq","neighEnergy","neighFailRatio","uavDistance"],
+  "episode_policy_mode": "random_stratified",
+  "episode_duration": 280,
+  "policy_pool": ["eps_0.05","eps_0.10","eps_0.20","eps_0.25","softmax_0.2","softmax_0.5","softmax_1.0","greedy"],
+  "policy_mix_weights": [1,1,1,2,1,1,1,0.6],
+  "utility_coeff": {"lq": 1.7, "neighEnergy": 0.9, "queue": 1.1, "failRatio": 1, "uavDistance": 0.35},
+  "topology": {"numNodes": 400, "areaX": 1000, "areaY": 1000}
+}

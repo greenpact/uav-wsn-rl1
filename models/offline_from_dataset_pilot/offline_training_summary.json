@@ -1,0 +1,34 @@
+{
+  "input_root": "results/offline_dataset/behavior-utility",
+  "sample_count": 20000,
+  "epochs": 2,
+  "batch_size": 512,
+  "learning_rate": 0.001,
+  "gamma": 0.95,
+  "target_sync_steps": 500,
+  "hidden_dim": 64,
+  "mean_loss_last": 0.2287544142222032,
+  "mlp_model": "models/offline_from_dataset_pilot/offline_dqn_policy.mdl",
+  "qtable_model": "models/offline_from_dataset_pilot/offline_qtable.qtab",
+  "qtable_entries": 2481,
+  "normalization_mean": [
+    0.8897107839584351,
+    0.2270546853542328,
+    0.5608525276184082,
+    1.0,
+    0.7366467118263245,
+    0.8920649290084839,
+    0.02252337336540222,
+    1.0
+  ],
+  "normalization_std": [
+    0.07602248340845108,
+    0.28870704770088196,
+    0.16884097456932068,
+    9.999999974752427e-07,
+    0.173223614692688,
+    0.07279130816459656,
+    0.027854548767209053,
+    9.999999974752427e-07
+  ]
+}

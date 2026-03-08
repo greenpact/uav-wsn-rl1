@@ -5,6 +5,7 @@
 
 #include <deque>
 #include <string>
+#include <vector>
 
 using namespace omnetpp;
 
@@ -36,6 +37,35 @@ class UavModule : public cSimpleModule
     double missionDuration = -1.0;
     double contactWindow = 8.0;
 
+    // Guided Gauss-Markov mobility kernel.
+    double gmAlpha = 0.8;
+    double gmSigmaV = 0.45;
+    double gmSigmaD = 0.18;
+    double gmHeading = 0.0;
+    double gmSpeed = 10.0;
+    double sensorRange154 = 100.0;
+    double maxAreaDistance = 1.0;
+
+    struct SensorSnapshot {
+      bool known = false;
+      double x = 0.0;
+      double y = 0.0;
+      double energyRatio = 1.0;
+      int degree = 0;
+      simtime_t lastSeen = SIMTIME_ZERO;
+    };
+    std::vector<SensorSnapshot> sensorState;
+
+    long long activeRound = -1;
+    double roundEntryY = 500.0;
+    double roundExitY = 500.0;
+    double roundCurvePhase = 0.0;
+    double roundCurveMix = 0.0;
+    double roundHoldAtBs = 8.0;
+    double roundTravelIn = 40.0;
+    double roundSurvey = 180.0;
+    double roundTravelOut = 40.0;
+
     cMessage *moveEvent = nullptr;
     cMessage *beaconEvent = nullptr;
     cMessage *uploadEvent = nullptr;
@@ -55,6 +85,11 @@ class UavModule : public cSimpleModule
     void broadcastBeacon();
     void flushCollectedToBs();
     void sendAckToSource(const std::string& packetId, int dstIdx);
+    void ensureRoundPlan(long long roundIndex);
+    static double unitNoise(long long roundIndex, int salt);
+    void updateGuidedGaussMarkov(double dt);
+    int selectGuidanceTarget() const;
+    void reflectAtBoundary(double& x, double& y, double& heading) const;
 
     double currentSpeed() const;
     bool inBsRegion() const;

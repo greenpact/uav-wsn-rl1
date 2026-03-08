@@ -19,6 +19,7 @@ class RewardWeights:
     w3_delay: float = 2.0
     w4_drop: float = 5.0
     w5_overflow: float = 4.0
+    w6_uav_distance: float = 1.25
 
 
 @dataclass
@@ -40,11 +41,12 @@ class DigitalTwinRoutingEnv:
 
     State-action feature vector used for Q(s, a) approximation:
     [energy_ratio, queue_ratio, neighbor_density_norm, tau_norm,
-     link_quality, neighbor_energy_ratio, neighbor_failure_ratio]
+     link_quality, neighbor_energy_ratio, neighbor_failure_ratio,
+     uav_distance_norm]
     """
 
-    feature_min = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
-    feature_max = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
+    feature_min = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+    feature_max = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
 
     def __init__(
         self,
@@ -69,9 +71,10 @@ class DigitalTwinRoutingEnv:
         self.tx_range_m = 90.0
         self.uav_speed = 15.0
         self.mission_duration = 300.0
+        self.uav_distance_norm = 0.5
 
         self.step_idx = 0
-        self.current_candidates = np.zeros((0, 7), dtype=np.float32)
+        self.current_candidates = np.zeros((0, 8), dtype=np.float32)
 
     def reset(self) -> np.ndarray:
         self._randomize_domain()
@@ -81,13 +84,14 @@ class DigitalTwinRoutingEnv:
         self.queue_ratio = float(self.rng.uniform(0.05, 0.35))
         self.neighbor_density_norm = float(self.rng.uniform(0.25, 0.8))
         self.tau_norm = float(self.rng.uniform(0.2, 1.0))
+        self.uav_distance_norm = float(self.rng.uniform(0.1, 0.9))
 
         self.current_candidates = self._sample_candidates()
         return self.current_candidates.copy()
 
     def step(self, action_index: int) -> Tuple[np.ndarray, float, bool, Dict[str, float]]:
         if self.current_candidates.shape[0] == 0:
-            return np.zeros((0, 7), dtype=np.float32), 0.0, True, {
+            return np.zeros((0, 8), dtype=np.float32), 0.0, True, {
                 "delivery": 0.0,
                 "energy_cost": 0.0,
                 "delay_penalty": 0.0,
@@ -102,6 +106,7 @@ class DigitalTwinRoutingEnv:
         lq = float(action_feat[4])
         neighbor_energy = float(action_feat[5])
         neighbor_fail = float(action_feat[6])
+        uav_dist = float(action_feat[7])
 
         p_success = (
             0.60 * lq
@@ -109,6 +114,7 @@ class DigitalTwinRoutingEnv:
             + 0.10 * (1.0 - self.queue_ratio)
             + 0.10 * (1.0 - self.channel_noise)
             + 0.05 * (1.0 - self.node_failure_rate)
+            + 0.10 * (1.0 - uav_dist)
             - 0.18 * neighbor_fail
         )
         p_success = float(np.clip(p_success, 0.02, 0.98))
@@ -140,6 +146,7 @@ class DigitalTwinRoutingEnv:
             - self.reward.w3_delay * delay_penalty
             - self.reward.w4_drop * packet_drop
             - self.reward.w5_overflow * buffer_overflow
+            - self.reward.w6_uav_distance * uav_dist
         )
 
         self._advance_state(delivery_success, energy_cost, packet_drop, buffer_overflow)
@@ -148,7 +155,7 @@ class DigitalTwinRoutingEnv:
         done = bool(self.step_idx >= self.max_steps or self.energy_ratio <= 0.02)
 
         if done:
-            self.current_candidates = np.zeros((0, 7), dtype=np.float32)
+            self.current_candidates = np.zeros((0, 8), dtype=np.float32)
         else:
             self.current_candidates = self._sample_candidates()
 
@@ -158,6 +165,7 @@ class DigitalTwinRoutingEnv:
             "delay_penalty": delay_penalty,
             "drop": packet_drop,
             "overflow": buffer_overflow,
+            "uav_distance": uav_dist,
             "p_success": p_success,
         }
         return self.current_candidates.copy(), float(reward), done, info
@@ -181,7 +189,7 @@ class DigitalTwinRoutingEnv:
         )
         k = int(np.clip(np.round(2 + density_scale * (self.domain.max_candidates - 2)), 2, self.domain.max_candidates))
 
-        candidates = np.zeros((k, 7), dtype=np.float32)
+        candidates = np.zeros((k, 8), dtype=np.float32)
 
         for i in range(k):
             lq_mu = 0.45 + 0.40 * (1.0 - self.channel_noise) + 0.10 * self.neighbor_density_norm
@@ -199,6 +207,9 @@ class DigitalTwinRoutingEnv:
             candidates[i, 4] = np.float32(lq)
             candidates[i, 5] = np.float32(neighbor_energy)
             candidates[i, 6] = np.float32(neighbor_fail)
+            # Candidate-level proximity to the current UAV location.
+            uav_dist = np.clip(self.rng.normal(self.uav_distance_norm, 0.15), 0.0, 1.0)
+            candidates[i, 7] = np.float32(uav_dist)
 
         return candidates
 
@@ -233,3 +244,9 @@ class DigitalTwinRoutingEnv:
         self.tau_norm = float(np.clip(self.tau_norm - tau_decay, 0.0, 1.0))
         if self.rng.random() < 0.08:
             self.tau_norm = float(self.rng.uniform(0.0, 1.0))
+
+        # Dynamic UAV location proxy (distance from node to UAV) with smooth perturbation.
+        drift = 0.10 * (0.5 - self.tau_norm)
+        self.uav_distance_norm = float(
+            np.clip(self.uav_distance_norm + drift + self.rng.normal(0.0, 0.05), 0.0, 1.0)
+        )

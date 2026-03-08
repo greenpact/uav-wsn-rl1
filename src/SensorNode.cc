@@ -10,6 +10,40 @@ Define_Module(SensorNode);
 
 namespace {
 
+bool gRunCsvInitialized = false;
+
+void initializeRunCsvOutputs()
+{
+    if (gRunCsvInitialized)
+        return;
+
+    std::filesystem::path dir("results");
+    std::filesystem::create_directories(dir);
+
+    {
+        std::ofstream out(dir / "packet_generated.csv", std::ios::out | std::ios::trunc);
+        if (out.is_open())
+            out << "t,src,seq,t_gen" << '\n';
+    }
+    {
+        std::ofstream out(dir / "packet_delivered.csv", std::ios::out | std::ios::trunc);
+        if (out.is_open())
+            out << "t,src,seq,t_gen,t_recv,hopCount,delay" << '\n';
+    }
+    {
+        std::ofstream out(dir / "node_deaths.csv", std::ios::out | std::ios::trunc);
+        if (out.is_open())
+            out << "node,t_death" << '\n';
+    }
+    {
+        std::ofstream out(dir / "node_positions.csv", std::ios::out | std::ios::trunc);
+        if (out.is_open())
+            out << "module,index,role,x,y" << '\n';
+    }
+
+    gRunCsvInitialized = true;
+}
+
 std::filesystem::path ensureResultFile(const std::string& filename, const std::string& header)
 {
     std::filesystem::path dir("results");
@@ -35,6 +69,8 @@ void appendCsvRow(const std::filesystem::path& filePath, const std::string& row)
 
 void SensorNode::initialize()
 {
+    initializeRunCsvOutputs();
+
     initialX = par("initialX").doubleValue();
     initialY = par("initialY").doubleValue();
     has80211 = par("has80211").boolValue();
@@ -44,6 +80,23 @@ void SensorNode::initialize()
     enableBeaconing = par("enableBeaconing").boolValue();
     enableDataGeneration = par("enableDataGeneration").boolValue();
     isBaseStation = par("isBaseStation").boolValue();
+
+    try {
+        const std::filesystem::path p = ensureResultFile(
+            "node_positions.csv",
+            "module,index,role,x,y"
+        );
+        const int idx = getIndex();
+        const std::string role = isBaseStation ? "base_station" : "sensor";
+        appendCsvRow(
+            p,
+            getFullPath() + "," +
+            std::to_string(idx) + "," +
+            role + "," +
+            std::to_string(initialX) + "," +
+            std::to_string(initialY)
+        );
+    } catch(...) {}
 
     // energy params
     remainingEnergy = par("initialEnergy").doubleValue();

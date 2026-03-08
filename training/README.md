@@ -43,7 +43,14 @@ python3 training/train_offline_dqn.py \
 - `--replay-size` default `100000`
 - `--batch-size` default `64`
 - `--target-update-steps` default `1000`
-- `--qtable-bins` default `10,10,11,10,10,10,10`
+- `--qtable-bins` default `10,10,11,10,10,10,10,10`
+
+## Publication-grade workflow
+
+For a comprehensive offline-DQN data, training, validation, and integration protocol
+with strict module boundaries between training and runtime routing, see:
+
+- `training/OFFLINE_DQN_WORKFLOW.md`
 
 ## Export format
 
@@ -81,3 +88,4 @@ Use config `OfflineDqnPolicy` in `omnetpp.ini`, which points to:
 - `**.routing[*].modelFile = "models/offline_qtable.qtab"`
 
 You can also point to the MLP export (`offline_dqn_policy.mdl`) if desired.
+

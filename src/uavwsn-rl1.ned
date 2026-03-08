@@ -52,6 +52,16 @@ simple TrlarRouting
         double ackTimeout = default(0.6);
         double neighborTimeout = default(5.0);
         double decisionInterval = default(0.02);
+        string policyPool = default("eps_0.10,softmax_0.50,eps_0.20,greedy");
+        string policyMixWeights = default("1,1,1,1");
+        string episodePolicyMode = default("random_stratified");
+        double episodeDuration = default(280.0);
+        double utilityCoeffLq = default(1.7);
+        double utilityCoeffNeighEnergy = default(0.9);
+        double utilityCoeffQueue = default(1.1);
+        double utilityCoeffFail = default(1.0);
+        double utilityCoeffUavDistance = default(0.35);
+        string mobilityTag = default("ggm-base");
         @display("i=block/routing");
     gates:
         input inFromSensor;

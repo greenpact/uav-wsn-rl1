@@ -1,0 +1,21 @@
+{
+  "input_root": "results/offline_dataset/behavior-stochastic",
+  "total_lines": 1410453,
+  "split_sizes": {
+    "train": 412710,
+    "val": 135334,
+    "test": 137365
+  },
+  "policy_counts": {
+    "softmax_0.2": 139045,
+    "softmax_0.5": 137966,
+    "eps_0.25": 271033,
+    "eps_0.10": 137365
+  },
+  "exploration_counts": {
+    "standard": 414376,
+    "high": 271033
+  },
+  "seed_count": 5,
+  "errors": []
+}

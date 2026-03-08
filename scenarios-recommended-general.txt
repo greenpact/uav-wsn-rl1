@@ -1,0 +1,504 @@
+COMPREHENSIVE OMNET++ SIMULATION SCENARIO DESIGN
+FOR UAV–WSN ROUTING WITH OFFLINE RL DATASET GENERATION
+
+1. PURPOSE
+This document defines a scientifically justified and statistically valid
+set of simulation scenarios for generating reinforcement learning datasets
+and evaluating UAV-assisted Wireless Sensor Network routing protocols.
+
+The scenarios follow commonly accepted parameter ranges used in
+WSN, UAV networking, and reinforcement learning research.
+
+The configuration ensures:
+- realistic network behavior
+- statistically valid experiments
+- sufficient dataset diversity for RL training
+- reproducible experimental methodology
+
+------------------------------------------------------------
+
+2. SIMULATION PLATFORM
+
+Simulator: OMNeT++
+Framework: INET Framework
+
+Optional WSN frameworks:
+Castalia
+MiXiM
+
+Simulation time per episode:
+600 – 1200 seconds
+
+Independent repetitions per scenario:
+20 – 30 runs
+
+Confidence interval:
+95%
+
+------------------------------------------------------------
+
+3. NETWORK DEPLOYMENT SCENARIOS
+
+Simulation Area Sizes
+
+Small-scale deployment:
+500 m × 500 m
+
+Medium-scale deployment:
+1000 m × 1000 m
+
+Large-scale deployment:
+2000 m × 2000 m
+
+Node Counts
+
+100 nodes
+200 nodes
+300 nodes
+400 nodes
+500 nodes
+
+Node Spatial Distributions
+
+Uniform random deployment
+Grid deployment
+Clustered deployment (Gaussian clusters)
+
+Clustered scenario parameters:
+
+Number of clusters: 3 – 10
+Cluster radius: 50 – 150 m
+
+------------------------------------------------------------
+
+4. SENSOR NODE HARDWARE MODEL
+
+Representative hardware platforms:
+
+TelosB mote
+Zolertia Z1
+MicaZ
+
+Radio standard:
+IEEE 802.15.4
+
+Data rate:
+250 kbps
+
+Transmit power:
+0 dBm – 5 dBm
+
+Receiver sensitivity:
+-95 dBm to -100 dBm
+
+Carrier frequency:
+2.4 GHz
+
+------------------------------------------------------------
+
+5. COMMUNICATION RANGE
+
+Sensor communication radius:
+
+50 m
+75 m
+100 m
+
+These values reflect typical IEEE 802.15.4 mote radios.
+
+Neighbor density target:
+
+5 – 25 neighbors per node
+
+------------------------------------------------------------
+
+6. WIRELESS CHANNEL MODEL
+
+Path loss model:
+Log-distance path loss
+
+Path loss exponent:
+
+2.0 (open field)
+2.7 (semi-urban)
+3.5 (obstructed environments)
+
+Shadowing deviation:
+
+2 dB
+4 dB
+6 dB
+
+Small-scale fading:
+
+Rayleigh fading
+
+Noise floor:
+
+-100 dBm
+
+Packet error rate baseline:
+
+0 – 10%
+
+------------------------------------------------------------
+
+7. MAC LAYER SETTINGS
+
+Protocol:
+IEEE 802.15.4 CSMA/CA
+
+Backoff exponent:
+
+3 – 5
+
+Maximum retries:
+
+3 – 5
+
+MAC queue length:
+
+10 – 50 packets
+
+------------------------------------------------------------
+
+8. TRAFFIC GENERATION MODELS
+
+Three sensing traffic models are recommended.
+
+1) Periodic sensing
+
+Packet interval:
+
+5 s
+10 s
+20 s
+30 s
+
+2) Poisson sensing
+
+Packet arrival rate:
+
+0.02 pkt/s
+0.05 pkt/s
+0.10 pkt/s
+0.20 pkt/s
+
+3) Event-driven bursts
+
+Burst size:
+
+5 – 20 packets
+
+Burst interval:
+
+60 – 300 seconds
+
+------------------------------------------------------------
+
+9. PACKET CHARACTERISTICS
+
+Packet sizes:
+
+32 bytes
+64 bytes
+128 bytes
+
+Payload types:
+
+Environmental sensing data
+Status telemetry
+
+Maximum transmission unit:
+
+127 bytes (IEEE 802.15.4)
+
+------------------------------------------------------------
+
+10. NODE ENERGY MODEL
+
+Energy model based on the first-order radio model.
+
+Initial node energy:
+
+2 Joules
+5 Joules
+10 Joules
+
+Energy consumption parameters:
+
+Electronics energy:
+50 nJ/bit
+
+Receive energy:
+50 nJ/bit
+
+Transmit amplifier energy:
+
+10 pJ/bit/m²
+
+Idle energy:
+
+1 – 5 mW
+
+------------------------------------------------------------
+
+11. UAV SYSTEM PARAMETERS
+
+Number of UAVs:
+
+1 (baseline)
+2 (extended scenario)
+
+UAV altitude:
+
+80 m
+100 m
+120 m
+
+UAV speed:
+
+10 m/s
+15 m/s
+20 m/s
+
+Communication range:
+
+200 m
+250 m
+300 m
+
+------------------------------------------------------------
+
+12. UAV TRAJECTORY MODELS
+
+Four trajectory models are recommended.
+
+1) Grid sweep trajectory
+
+Used in coverage missions.
+
+2) Random waypoint trajectory
+
+Used for stochastic mobility scenarios.
+
+3) Circular patrol trajectory
+
+Used in surveillance scenarios.
+
+4) RCLF trajectory
+(Routing-Coupled Local Flow trajectory)
+
+Trajectory update period:
+
+1 – 5 seconds
+
+Mission cycle duration:
+
+600 s
+900 s
+1200 s
+
+------------------------------------------------------------
+
+13. ROUTING BEHAVIOR POLICY
+(DATASET GENERATION)
+
+Routing decisions during dataset generation follow
+utility-based behavior policies.
+
+Utility features (8-dimensional):
+
+Residual energy
+Buffer availability
+Link quality
+Distance progress to UAV
+Hop distance to UAV gateway
+Congestion level
+Neighbor density
+Predicted UAV contact time
+
+------------------------------------------------------------
+
+14. BEHAVIOR POLICY EXPLORATION
+
+Primary policy:
+
+Utility + epsilon-greedy exploration
+
+epsilon values:
+
+0.05
+0.10
+0.20
+
+Secondary policy:
+
+Utility + softmax sampling
+
+Temperature values:
+
+0.2
+0.5
+1.0
+
+Control baseline:
+
+Deterministic greedy utility routing
+
+------------------------------------------------------------
+
+15. STATE VECTOR
+
+State representation:
+
+s = [
+Residual energy
+Buffer availability
+Link quality
+Distance progress to UAV
+Hop distance
+Congestion level
+Neighbor density
+UAV contact prediction
+]
+
+All state features normalized to range [0,1].
+
+------------------------------------------------------------
+
+16. REWARD FUNCTION
+
+Reward formulation:
+
+r = w1*Ds - w2*Ec - w3*Td - w4*Pl
+
+Where
+
+Ds = successful packet delivery
+Ec = energy consumption
+Td = delay
+Pl = packet loss
+
+Recommended weights:
+
+w1 = 5
+w2 = 1
+w3 = 2
+w4 = 5
+
+------------------------------------------------------------
+
+17. DATASET GENERATION SETTINGS
+
+Training episodes:
+
+10,000 – 50,000
+
+Independent runs per scenario:
+
+20 – 30
+
+Target dataset size:
+
+1 million – 10 million routing samples
+
+Each sample stored as:
+
+(s, a, r, s')
+
+------------------------------------------------------------
+
+18. DOMAIN RANDOMIZATION
+
+To improve RL generalization, the following parameters
+should be randomized between episodes.
+
+Node placement
+Traffic rate
+Wireless noise
+UAV speed
+Node failures
+
+Node failure probability:
+
+0 – 5 %
+
+------------------------------------------------------------
+
+19. PERFORMANCE METRICS
+
+Routing protocols should be evaluated using:
+
+Packet Delivery Ratio (PDR)
+
+Average End-to-End Delay
+
+Energy Consumption per Packet
+
+Network Lifetime
+
+Throughput
+
+Packet Loss Rate
+
+------------------------------------------------------------
+
+20. BASELINE PROTOCOLS FOR COMPARISON
+
+The RL-based routing protocol should be compared with:
+
+LEACH
+
+PEGASIS
+
+Energy-aware geographic routing
+
+Q-routing
+
+UAV-assisted clustering protocols
+
+------------------------------------------------------------
+
+21. SCENARIO EXPERIMENT MATRIX
+
+Recommended experimental grid:
+
+Node count:
+100 / 300 / 500
+
+Traffic rate:
+0.05 / 0.1 / 0.2 pkt/s
+
+UAV speed:
+10 / 15 / 20 m/s
+
+Exploration policy:
+epsilon-greedy / softmax
+
+Total combinations produce statistically diverse
+training and evaluation scenarios.
+
+------------------------------------------------------------
+
+22. STATISTICAL VALIDITY
+
+Minimum independent runs per scenario:
+
+20
+
+Confidence interval:
+
+95 %
+
+Statistical analysis methods:
+
+Student t-test
+
+ANOVA
+
+These ensure scientifically valid comparisons.
+
+------------------------------------------------------------
+
+END OF DOCUMENT

@@ -1,0 +1,2 @@
+# Generated large dataset manifests (excluded to satisfy GitHub file-size limits)
+results/offline_dataset/**/manifest*/train_manifest.json

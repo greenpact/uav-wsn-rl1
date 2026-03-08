@@ -1,0 +1,254 @@
+UAV-WSN-RL1: Overall Project Design and Component Guide
+
+1. Project Purpose and Scope
+This project simulates a UAV-assisted wireless sensor network (WSN) in OMNeT++ and evaluates routing behavior under three policy modes:
+- General (no external model file)
+- OfflineDqnPolicy (discretized Q-table inference)
+- OfflineDqnMlp (MLP inference)
+
+Core objective:
+Measure reliability, delay, and lifetime behavior of TR-LAR routing with optional RL model scoring, under repeatable simulation conditions.
+
+
+2. Top-Level Architecture
+The project combines three layers:
+- Simulation layer (C++ OMNeT++ modules in `src/`)
+- Experiment orchestration layer (shell scripts + `omnetpp.ini`)
+- Offline training layer (Python digital twin + DQN export)
+
+Primary runtime path:
+1) OMNeT++ builds `uav-wsn-rl1` executable.
+2) NED network `src.UavWsnNetwork` instantiates sensors, routing modules, UAV, and shared radio medium.
+3) Data/control packets flow through the radio medium with range/radio filtering.
+4) Results are exported to `.sca` and CSV files.
+5) Plot script converts CSVs to PNG figures.
+
+
+3. Network Design (NED)
+Defined in `src/uavwsn-rl1.ned`.
+
+Modules:
+- `SensorNode` (`sensors[i]` and `bs`)
+- `TrlarRouting` (`routing[i]`, one per sensor)
+- `UavModule` (`uav`)
+- `RadioMedium` (single shared medium)
+
+Composition:
+- Each sensor is connected to its own routing module.
+- Routing modules interface with `RadioMedium`.
+- UAV and base station also connect to `RadioMedium`.
+
+Index conventions used in forwarding logic:
+- sensors: `0..numNodes-1`
+- UAV: `numNodes`
+- base station: `numNodes+1`
+
+
+4. C++ Runtime Components
+
+4.1 `SensorNode` (`src/SensorNode.cc`, `src/SensorNode.h`)
+Responsibilities:
+- Initializes node radio/energy parameters and timers.
+- Periodically emits beacons (if enabled).
+- Periodically generates data packets (if enabled).
+- Consumes Rx/Tx energy.
+- Detects and records node death events.
+- Writes CSV outputs:
+	- `results/packet_generated.csv`
+	- `results/packet_delivered.csv` (at base station)
+	- `results/node_deaths.csv`
+
+Important behavior:
+- Data packets include `srcIdx`, `seq`, `t_gen`, and evolving `hopCount`.
+- Base station computes end-to-end delay from `t_gen`.
+
+
+4.2 `TrlarRouting` (`src/routing/TrlarRouting.cc`, `.h`)
+Responsibilities:
+- Maintains neighbor table (link quality, freshness, estimated energy, failure history).
+- Manages packet queue and in-flight transmission state.
+- Selects next hop from candidate set.
+- Combines model score with adaptive local bias (`Q(s,a) + bias`).
+- Handles ACK timeout, retries, congestion penalty, and transition logging.
+
+Decision features (7D vector):
+- self energy ratio
+- queue ratio
+- neighbor density ratio
+- normalized UAV time-to-contact proxy
+- candidate link quality
+- candidate energy ratio
+- candidate failure ratio
+
+Transition log output:
+- `results/transitions.jsonl` (decision/outcome/drop events)
+
+
+4.3 `RLAgentInterface` (`src/routing/RLAgentInterface.cc`, `.h`)
+Responsibilities:
+- Loads and parses two model formats:
+	- MLP text format (`.mdl`)
+	- Q-table format (`qtable_v1`, `.qtab`)
+- Scores action features for routing decisions.
+- Falls back to deterministic heuristic if model missing/incompatible.
+
+Integration point:
+- `TrlarRouting` calls `agent.scoreAction(features)`.
+
+
+4.4 `UavModule` (`src/uav/UavModule.cc`, `.h`)
+Responsibilities:
+- Moves UAV along mission trajectory.
+- Broadcasts UAV beacons carrying mission/contact metadata.
+- Collects in-transit sensor data destined for UAV relay.
+- Uploads collected packets to base station when in upload region.
+- Sends ACKs back to source when appropriate.
+
+Recorded scalars:
+- `uavCollectedPackets`
+- `uavUploadedPackets`
+
+
+4.5 `RadioMedium` (`src/RadioMedium.cc`, `.h`)
+Responsibilities:
+- Receives messages from sender index gate and forwards to reachable recipients.
+- Enforces communication range and radio compatibility (`802.15.4` vs `802.11`).
+- Updates hop metadata and source tags on forwarded copies.
+- Periodically records round-level metrics:
+	- `roundIndex`
+	- `totalNetworkEnergy`
+	- `controlPacketCount`
+
+
+5. Experiment and Configuration Layer
+
+5.1 Main config file: `omnetpp.ini`
+Current global controls include:
+- `repeat = 30`
+- `seed-set = ${repetition}`
+
+Configs:
+- `[Config QuickTest]`: tiny 2-node short smoke test.
+- `[General]`: baseline scenario, no model file.
+- `[Config OfflineDqnPolicy]`: uses `models/offline_qtable.qtab`.
+- `[Config OfflineDqnMlp]`: uses `models/offline_dqn_policy.mdl`.
+
+Output directories:
+- quick test: `results/quick-test`
+- multi-run: `results/multi-run/run-${repetition}`
+- policy runs: `results/offline-dqn-policy`, `results/offline-dqn-mlp`
+
+
+5.2 Build and run scripts
+- `scripts/omnetpp_env.sh`: validates and sources OMNeT++ environment.
+- `scripts/run_simulation.sh`: build + execute selected config in Cmdenv.
+- `simulations/run`: additional runner used by simulation folder workflow.
+
+Recommended command pattern:
+- Source OMNeT++ env.
+- Use `CONFIG_NAME=<name> scripts/run_simulation.sh`.
+
+
+6. Offline Training Layer
+
+6.1 `training/digital_twin_env.py`
+Synthetic environment for offline decision learning with domain randomization.
+
+Key properties:
+- State-action features align with routing feature vector (7D, normalized [0,1]).
+- Reward mixes delivery, energy cost, delay, drop, overflow penalties.
+- Produces candidate sets and transition dynamics for large offline training.
+
+
+6.2 `training/train_offline_dqn.py`
+Responsibilities:
+- Trains DQN-style action-value approximator with replay buffer + target network.
+- Exports:
+	- MLP model (`offline_dqn_policy.mdl`)
+	- Discretized Q-table (`offline_qtable.qtab`)
+	- Training summary JSON
+
+Defaults:
+- episodes: 20000
+- max steps: 240
+- gamma: 0.95
+- learning rate: 1e-3
+- replay size: 100000
+- batch size: 64
+
+Wrapper script:
+- `scripts/train_offline_policy.sh` activates `.venv` and launches training.
+
+
+7. Results and Analysis Pipeline
+
+Primary generated artifacts:
+- Scalar/vector outputs: `.sca`, `.vec`
+- Packet events: `results/packet_generated.csv`, `results/packet_delivered.csv`
+- Lifetime events: `results/node_deaths.csv`
+- Routing transitions: `results/transitions.jsonl`
+- Plots: `results/plots/*.png`
+
+Plot script:
+- `scripts/plot_results.py` creates:
+	- `packet_flow.png`
+	- `delay_histogram.png`
+	- `node_deaths.png`
+
+
+8. Metrics and Scientific Intent
+From project procedure and outputs, the key metrics are:
+- Packet Delivery Ratio (PDR)
+- Drop rate
+- End-to-end delay (mean/median/p95)
+- First node death time
+- Energy proxy (`totalNetworkEnergy` scalar)
+
+Comparison intent:
+- Baseline (`General`) vs Q-table policy (`OfflineDqnPolicy`) vs MLP policy (`OfflineDqnMlp`)
+with equal network/scenario settings and controlled seeds.
+
+
+9. Build/Runtime Dependencies
+- OMNeT++ 6.x runtime + toolchain
+- C++ compiler and make
+- Python 3 for training/plotting
+- Python packages:
+	- `numpy`
+	- `torch`
+	- `pandas`
+	- `matplotlib`
+
+
+10. Operational Workflow (Practical)
+1) Environment check
+- Set `OMNETPP_ROOT`, source `scripts/omnetpp_env.sh`.
+
+2) Smoke test
+- `CONFIG_NAME=QuickTest scripts/run_simulation.sh`
+
+3) Train offline model (if required)
+- `scripts/train_offline_policy.sh --episodes 20000 --max-steps 240`
+
+4) Run scenario(s)
+- single run example: `CONFIG_NAME=General scripts/run_simulation.sh -r 0`
+- comparative runs: `General`, `OfflineDqnPolicy`, `OfflineDqnMlp`
+
+5) Plot
+- `. .venv/bin/activate && python scripts/plot_results.py`
+
+6) Validate and summarize metrics
+- Parse CSV/scalar outputs and compare by config.
+
+
+11. Current Organization Notes
+- The repository now contains the full simulation, training, and plotting pipeline.
+- Branch `uav-wsn-rl1-b1` is suitable for incremental organization/validation work.
+- `notes/SESSION_LOG.md` is available for persistent session traceability.
+
+
+12. Suggested Next Structure Improvements (Optional)
+- Add `.gitignore` entries for large generated outputs and `.venv/` if not intended for version control.
+- Add a dedicated `analysis/` folder for statistical notebooks/scripts.
+- Add a single `docs/experiment-runbook.md` mapping exact commands to expected outputs.
+- Add CI smoke run (`QuickTest`) to verify build + launch on every change.

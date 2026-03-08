@@ -307,7 +307,7 @@ std::vector<double> RLAgentInterface::applyNetwork(const std::vector<double>& in
 
 double RLAgentInterface::fallbackHeuristic(const std::vector<double>& features) const
 {
-    // Features: [energy, queue, density, tau, lq, neighEnergy, neighFailRatio]
+    // Features: [energy, queue, density, tau, lq, neighEnergy, neighFailRatio, uavDistance]
     if (features.size() < 7)
         return 0.0;
 
@@ -318,9 +318,10 @@ double RLAgentInterface::fallbackHeuristic(const std::vector<double>& features) 
     const double lq = clip01(features[4]);
     const double neighEnergy = clip01(features[5]);
     const double failRatio = clip01(features[6]);
+        const double uavDistance = (features.size() >= 8) ? clip01(features[7]) : 1.0;
 
     return (1.7 * lq) + (0.9 * neighEnergy) + (0.3 * energy) + (0.2 * density)
-         - (1.1 * queue) - (0.7 * tau) - (1.0 * failRatio);
+            - (1.1 * queue) - (0.7 * tau) - (1.0 * failRatio) - (0.35 * uavDistance);
 }
 
 double RLAgentInterface::scoreAction(const std::vector<double>& features) const

@@ -1,0 +1,17 @@
+{
+  "run_number": 3,
+  "config_name": "OfflineData_BehaviorStochastic",
+  "network": "UavWsnNetwork",
+  "git_commit": "b77fb6b11db1",
+  "omnetpp_version": "\nunknown",
+  "config_hash": "633c79a384afbdf2062368611ca466516ddfa8c93e88d9301a1629034f284ae8",
+  "mobility_tag": "ggm-base",
+  "schema_version": 1,
+  "feature_order": ["energy","queue","density","tau","lq","neighEnergy","neighFailRatio","uavDistance"],
+  "episode_policy_mode": "random_stratified",
+  "episode_duration": 280,
+  "policy_pool": ["eps_0.10","eps_0.25","softmax_0.2","softmax_0.5","softmax_1.0"],
+  "policy_mix_weights": [1,2,1,1,1],
+  "utility_coeff": {"lq": 1.7, "neighEnergy": 0.9, "queue": 1.1, "failRatio": 1, "uavDistance": 0.35},
+  "topology": {"numNodes": 400, "areaX": 1000, "areaY": 1000}
+}

@@ -1,0 +1,282 @@
+Full-Scale Scenario Catalog for Scientifically Valid Offline Data Collection
+Date: 2026-03-08
+Repository: greenpact/uav-wsn-rl1
+Scope: Pre-full-scale scenario set for OMNeT++ offline data generation, offline training, and frozen-policy evaluation
+
+====================================================================
+1) Purpose
+====================================================================
+
+This catalog defines a rigorous, publication-oriented scenario matrix to run before final claims.
+It is aligned with the implemented pipeline:
+- offline data generation in OMNeT++
+- dataset-only offline training
+- frozen-policy evaluation in OMNeT++
+
+Non-negotiable model constraint:
+- Keep the existing 8D features unchanged:
+  [energy, queue, density, tau, lq, neighEnergy, neighFailRatio, uavDistance]
+
+====================================================================
+2) Source-Grounded Recommendations (Online)
+====================================================================
+
+The scenario choices below follow widely used online references and common accepted simulation practice:
+
+A) UAV channel and propagation realism:
+- 3GPP TR 36.777 (Enhanced LTE support for aerial vehicles)
+- 3GPP TR 38.901 (Study on channel model for frequencies 0.5 to 100 GHz)
+
+B) Reproducible network simulation methodology:
+- OMNeT++ user manual / Cmdenv multi-run practice
+- INET framework modeling guidance
+
+C) Offline RL data quality and policy support:
+- Standard offline RL guidance on behavior-policy coverage and conservative evaluation
+  (widely reflected in D4RL and subsequent offline RL benchmarking literature)
+
+D) Scientific reporting quality:
+- Common simulation-paper standards: seed-based repetitions, confidence intervals,
+  matched-baseline comparisons, and ablation studies.
+
+Note:
+- This catalog is intentionally conservative and aligned with accepted peer-review expectations
+  for simulation + ML papers.
+
+====================================================================
+3) Global Protocol (Applies to All Scenarios)
+====================================================================
+
+1. Same NED network and core energy/radio model across compared methods.
+2. Deterministic split by seed/scenario (no random row split).
+3. Isolated outputs per run.
+4. Per-run metadata with commit hash, config hash, schema version, policy/mobility tags.
+5. No online training during evaluation.
+6. Report mean/std/95% CI and effect-size-oriented interpretation.
+
+Recommended scale:
+- Pilot: >= 30 seeds per core scenario family.
+- Full scale: 100 seeds for main claims.
+
+====================================================================
+4) Scenario Families
+====================================================================
+
+Family F1: Core Reference (Claim Backbone)
+Goal:
+- Establish baseline scientific claim under canonical settings.
+
+Config:
+- Area 1000x1000, nodes=400, UAV=1, BS=1
+- sim-time-limit: 5000s
+- traffic: mixed periodic + Poisson profile (fixed per sub-scenario)
+- mobility: GGM-base
+- behavior policy pool: full heterogeneous episode switching
+
+Repetitions:
+- 100 seeds
+
+Expected outputs:
+- Offline datasets
+- QA manifests
+- Frozen-policy eval metrics
+
+
+Family F2: Traffic Intensity Sweep
+Goal:
+- Verify policy robustness to offered-load shift.
+
+Sub-scenarios:
+- Light load
+- Medium load
+- Heavy load
+
+Control:
+- Keep topology/mobility fixed; vary only data generation interval/Poisson rate.
+
+Repetitions:
+- 50 seeds per load level
+
+
+Family F3: Link Impairment / Channel Stress
+Goal:
+- Stress-test under channel degradation and uncertainty.
+
+Sub-scenarios:
+- Low impairment
+- Medium impairment
+- High impairment
+
+Control:
+- Keep traffic and topology fixed; vary only radio/link perturbation parameters.
+
+Repetitions:
+- 50 seeds per level
+
+
+Family F4: UAV Mobility Sensitivity
+Goal:
+- Validate dependence on mobility assumptions.
+
+Sub-scenarios:
+- GGM-conservative
+- GGM-base
+- GGM-exploratory
+- Deterministic sweep/grid
+
+Repetitions:
+- 50 seeds per mobility mode
+
+
+Family F5: Behavior-Policy Data Coverage
+Goal:
+- Prove offline dataset quality is not narrow-policy overfit.
+
+Sub-scenarios:
+- Utility mix with heterogeneous episode switching
+- Stochastic-focused mix
+- Ablation-no-uav utility term
+
+Required condition:
+- Include explicit high-exploration episodes (epsilon=0.25)
+
+Repetitions:
+- 50 seeds per behavior family
+
+
+Family F6: Topology Density Robustness
+Goal:
+- Evaluate scaling sensitivity to node density.
+
+Sub-scenarios:
+- 200 nodes
+- 400 nodes (reference)
+- 600 nodes
+
+Control:
+- Keep area fixed at 1000x1000 to vary density.
+
+Repetitions:
+- 50 seeds per node count
+
+
+Family F7: Mission Timing / Contact Regime
+Goal:
+- Measure sensitivity to UAV mission cycle and contact opportunity.
+
+Sub-scenarios:
+- Short mission period / short contact window
+- Reference mission period / contact window
+- Long mission period / long contact window
+
+Repetitions:
+- 50 seeds per regime
+
+
+Family F8: Energy Budget Sensitivity
+Goal:
+- Verify gains are not tied to a single battery regime.
+
+Sub-scenarios:
+- Low initial energy
+- Reference initial energy
+- High initial energy
+
+Repetitions:
+- 50 seeds per regime
+
+
+Family F9: Distribution Shift Evaluation
+Goal:
+- Test train/eval mismatch robustness.
+
+Design:
+- Train on subset of traffic+mobility conditions.
+- Evaluate on held-out condition combinations.
+
+Repetitions:
+- 50 seeds per held-out shift condition
+
+
+Family F10: Baseline and Ablation Comparisons
+Goal:
+- Support causal interpretation of gains.
+
+Baselines:
+- Greedy utility behavior policy
+- Existing non-RL heuristic mode(s)
+
+Ablations (feature schema unchanged):
+- utilityCoeffUavDistance = 0
+- reduced exploration mix (no epsilon=0.25)
+- no softmax episodes
+
+Repetitions:
+- 100 seeds for final comparison set
+
+====================================================================
+5) Minimum Full-Scale Matrix (Recommended)
+====================================================================
+
+If compute budget is constrained, run this minimum accepted matrix:
+
+1. F1 core reference (100 seeds)
+2. F4 mobility sensitivity (4 modes x 50 seeds)
+3. F5 behavior-policy coverage (3 modes x 50 seeds)
+4. F10 baseline + key ablations (100 seeds)
+
+This provides strong evidence while keeping runtime manageable.
+
+====================================================================
+6) Scenario Metadata Contract (Per Run)
+====================================================================
+
+Each run metadata must include:
+- run_id, config_name, seed
+- git_commit, omnetpp_version, config_hash
+- schema_version, feature_order
+- policy_pool, policy_mix_weights, episode_policy_mode, episode_duration
+- mobility_tag
+- topology parameters
+- traffic parameters
+- channel/impairment profile tag
+
+====================================================================
+7) Acceptance Gates Before Publication Claims
+====================================================================
+
+Gate G1: Dataset Integrity
+- JSON parse success 100%
+- Required field completeness 100%
+- No mixed-run contamination
+
+Gate G2: Coverage
+- Policy support coverage above minimum for each policy profile
+- High-exploration support present (epsilon=0.25 episodes)
+- Action diversity and tail-state coverage acceptable
+
+Gate G3: Reproducibility
+- Seed-split manifests frozen and hash-recorded
+- Re-runs within tolerance on core metrics
+
+Gate G4: Evaluation Quality
+- Frozen inference only in eval runs
+- Baseline + ablation comparisons complete
+- mean/std/95% CI reported across seeds
+
+If any gate fails, claims must be labeled as prototype-level, not publication-grade.
+
+====================================================================
+8) Detailed Next Actions (Execution Order)
+====================================================================
+
+1. Run full-scale collection for F1/F4/F5/F10 with RUNS=100 or as specified.
+2. Build manifests and QA reports per scenario family using training/build_offline_dataset.py.
+3. Freeze manifests and dataset hashes.
+4. Train offline from fixed datasets using training/train_offline_dqn_from_dataset.py.
+5. Run Eval_OfflineQTable and Eval_OfflineMlp for each evaluation family.
+6. Aggregate statistics using training/analyze_offline_eval_stats.py.
+7. Produce final tables: mean, std, 95% CI, with ablation deltas.
+8. Archive metadata + manifests + model hashes for reproducibility package.
+
+End of catalog.

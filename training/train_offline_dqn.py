@@ -84,7 +84,7 @@ class RunningStats:
 
 
 class QNetwork(nn.Module):
-    def __init__(self, input_dim: int = 7, hidden_dim: int = 64) -> None:
+    def __init__(self, input_dim: int = 8, hidden_dim: int = 64) -> None:
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
@@ -273,20 +273,20 @@ def train(args: argparse.Namespace) -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
 
-    policy = QNetwork(input_dim=7, hidden_dim=args.hidden_dim).to(device)
-    target = QNetwork(input_dim=7, hidden_dim=args.hidden_dim).to(device)
+    policy = QNetwork(input_dim=8, hidden_dim=args.hidden_dim).to(device)
+    target = QNetwork(input_dim=8, hidden_dim=args.hidden_dim).to(device)
     target.load_state_dict(policy.state_dict())
     target.eval()
 
     optimizer = optim.Adam(policy.parameters(), lr=args.learning_rate)
     replay = ReplayBuffer(capacity=args.replay_size, seed=args.seed)
 
-    stats = RunningStats(dim=7)
+    stats = RunningStats(dim=8)
     visited_bins = set()
 
     bins = parse_bins(args.qtable_bins)
-    if len(bins) != 7:
-        raise SystemExit("qtable bins must define exactly 7 dimensions.")
+    if len(bins) != 8:
+        raise SystemExit("qtable bins must define exactly 8 dimensions.")
 
     feature_mins = DigitalTwinRoutingEnv.feature_min.astype(np.float32)
     feature_maxs = DigitalTwinRoutingEnv.feature_max.astype(np.float32)
@@ -426,7 +426,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--epsilon-end", type=float, default=0.05, help="Final epsilon")
     p.add_argument("--epsilon-decay-steps", type=int, default=200000, help="Epsilon decay horizon")
 
-    p.add_argument("--qtable-bins", default="10,10,11,10,10,10,10", help="Comma-separated discretization bins")
+    p.add_argument("--qtable-bins", default="10,10,11,10,10,10,10,10", help="Comma-separated discretization bins")
 
     p.add_argument("--seed", type=int, default=13, help="Random seed")
     p.add_argument("--log-interval", type=int, default=100, help="Episodes between progress prints")

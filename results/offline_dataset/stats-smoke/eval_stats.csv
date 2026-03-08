@@ -1,0 +1,7 @@
+config,metric,n,mean,std,ci95
+OfflineData_BehaviorUtility,failedForwards,400,20.6875,12.523855682372032,1.227337856872459
+OfflineData_BehaviorUtility,forwardedPackets,400,333.0775,172.46232814828232,16.90130815853167
+OfflineData_BehaviorUtility,queueDrops,400,8.995,19.331949868398834,1.8945310871030856
+OfflineData_BehaviorUtility,successfulForwards,400,322.5675,166.95218784525045,16.361314408834545
+OfflineData_BehaviorUtility,uavCollectedPackets,1,0.0,0.0,0.0
+OfflineData_BehaviorUtility,uavUploadedPackets,1,0.0,0.0,0.0

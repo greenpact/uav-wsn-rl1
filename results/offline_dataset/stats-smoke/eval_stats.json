@@ -1,0 +1,53 @@
+{
+  "input_root": "results/offline_dataset",
+  "rows": [
+    {
+      "config": "OfflineData_BehaviorUtility",
+      "metric": "failedForwards",
+      "n": 400,
+      "mean": 20.6875,
+      "std": 12.523855682372032,
+      "ci95": 1.227337856872459
+    },
+    {
+      "config": "OfflineData_BehaviorUtility",
+      "metric": "forwardedPackets",
+      "n": 400,
+      "mean": 333.0775,
+      "std": 172.46232814828232,
+      "ci95": 16.90130815853167
+    },
+    {
+      "config": "OfflineData_BehaviorUtility",
+      "metric": "queueDrops",
+      "n": 400,
+      "mean": 8.995,
+      "std": 19.331949868398834,
+      "ci95": 1.8945310871030856
+    },
+    {
+      "config": "OfflineData_BehaviorUtility",
+      "metric": "successfulForwards",
+      "n": 400,
+      "mean": 322.5675,
+      "std": 166.95218784525045,
+      "ci95": 16.361314408834545
+    },
+    {
+      "config": "OfflineData_BehaviorUtility",
+      "metric": "uavCollectedPackets",
+      "n": 1,
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95": 0.0
+    },
+    {
+      "config": "OfflineData_BehaviorUtility",
+      "metric": "uavUploadedPackets",
+      "n": 1,
+      "mean": 0.0,
+      "std": 0.0,
+      "ci95": 0.0
+    }
+  ]
+}

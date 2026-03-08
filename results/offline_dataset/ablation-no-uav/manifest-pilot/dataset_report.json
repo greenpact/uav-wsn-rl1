@@ -1,0 +1,19 @@
+{
+  "input_root": "results/offline_dataset/ablation-no-uav",
+  "total_lines": 1388839,
+  "split_sizes": {
+    "train": 402021,
+    "val": 135334,
+    "test": 137365
+  },
+  "policy_counts": {
+    "eps_0.25": 537355,
+    "eps_0.10": 137365
+  },
+  "exploration_counts": {
+    "high": 537355,
+    "standard": 137365
+  },
+  "seed_count": 5,
+  "errors": []
+}

@@ -1,0 +1,31 @@
+Warning: overwriting previous environment for '/workspaces/omnetpp'.
+make: Nothing to be done for 'all'.
+OMNeT++ Discrete Event Simulation  (C) 1992-2025 Andras Varga, OpenSim Ltd.
+Version: 6.3.0, build: internal, edition: Academic Public License -- NOT FOR COMMERCIAL USE
+See the license for distribution terms and warranty disclaimer
+
+Setting up Cmdenv...
+
+Loading NED files from .:  3
+Loading NED files from src:  2
+Loading NED files from /workspaces/uav-wsn-rl1:  3
+Loading NED files from /workspaces/uav-wsn-rl1/src:  2
+
+Preparing for running configuration QuickTest, run #0...
+Assigned runID=QuickTest-0-20260306-12:34:09-145903
+Setting up network "src.UavWsnNetwork"...
+Initializing...
+
+Running simulation...
+** Event #0   t=0   Elapsed: 1.3e-05s (0m 00s)  0% completed  (0% total)
+     Speed:     ev/sec=0   simsec/sec=0   ev/simsec=0
+     Messages:  created: 10   present: 10   in FES: 9
+** Event #167   t=2   Elapsed: 0.000707s (0m 00s)  100% completed  (100% total)
+     Speed:     ev/sec=0   simsec/sec=0   ev/simsec=0
+     Messages:  created: 54   present: 10   in FES: 8
+
+<!> Simulation time limit reached -- at t=2s, event #167
+
+Calling finish() at end of Run #0...
+
+End.

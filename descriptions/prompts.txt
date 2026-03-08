@@ -1,0 +1,23 @@
+let's get the whole project well organized and let me have a good grip on it.
+1) generate a comprehensive document (use the descriptions/working-project/overall-project.txt file) about the overall design, descriptions of the whole simulation project and components.
+2) i want to check, verify, validate every step. so prepare a procedure (create a txt document in the same folder) how to prompt you to do this.
+
+
+check the following:
+-the packet_flow.png plot result shows only generated packets curve, and no delivered packets cure. this indicates either no packets delivered or not recorded at bs properly. identify the issue and fix it.
+
+
+i'm implementing a rl based uav assisted wsn routing protocol. an offline dqn is trained to generate offline qtable for multihop routing next hop selection. the uav is to be part of the rl based routing process. uav should fly to nodes with higher energy, larger node degree, nearest to uav. suggest a mobility model for this scenario. 
+
+
+
+
+-run stage 0 from the step-by-step-validation-prompt-procedure.txt file and produce validation report
+
+
+
+carefully analyze the mobility model in models/gm-mobility.txt file. this model is to be adapted to the existing uav mobility model implementation. modify the offline dqn to include the UAV's location as a dynamic feature in the state space. you can modify the Reward Function to include weighted distance to uav (if not included )
+
+
+
+the rl-based routing protocol is to be simulated using omnet++ network area: 1000x1000m, nodes=400, single uav, single bs. generate a complete detailed scientifically valid data generation workflow. sensor nodes and uav are to be considered as agents. gauss markov mobility model is to be used. states are: s = [resEnergyRatio, bufferOccRatio, neighborDensity, linkQualClass_to_candidate_j (per candidate), predictedUAVContactTime, nodetouavdistance]. 

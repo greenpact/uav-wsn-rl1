@@ -1,0 +1,255 @@
+UAV-WSN-RL1 Configuration Reference (from omnetpp.ini)
+
+1. Purpose
+This document provides a complete, detailed description of simulation configurations used in this project. It explains:
+- Global run controls
+- Base configuration (`General`)
+- Derived configurations (`QuickTest`, `OfflineDqnPolicy`, `OfflineDqnMlp`)
+- Parameter groups and their impact on behavior
+- Output paths and run selection guidance
+
+
+2. Configuration Model Overview
+The project uses OMNeT++ INI-based configurations.
+
+Key concept:
+- `General` defines the main experiment scenario.
+- Other configs either override or extend it.
+
+Configured profiles:
+- `General`
+- `QuickTest`
+- `OfflineDqnPolicy`
+- `OfflineDqnMlp`
+
+
+3. Global Run Control (Top of omnetpp.ini)
+
+3.1 `repeat = 1`
+- Meaning: number of repetitions per configuration.
+- Current behavior: only one run (`run #0`) is executed unless overridden by command line.
+- Typical scientific mode: increase to larger values for statistical confidence.
+
+
+4. Base Configuration: [General]
+
+4.1 Scenario identity
+- `network = src.UavWsnNetwork`
+	- Selects the NED network instantiated for this simulation.
+- `sim-time-limit = 5000s`
+	- Sets max simulated time horizon.
+
+
+4.2 NED path
+- `ned-path = .:src`
+	- Includes project root and `src/` in NED lookup so package names resolve.
+
+
+4.3 Seed handling
+- `seed-set = ${repetition}`
+	- RNG seed is tied to repetition index.
+	- With `repeat = 1`, only one seed (`0`) is used.
+
+
+4.4 Network topology parameters
+- `*.numNodes = 400`
+	- Number of sensor nodes in the network.
+- `*.areaX = 1000`
+- `*.areaY = 1000`
+	- Field size (meters-equivalent logical space).
+- `*.radioMedium.roundDuration = 1.0`
+	- Interval for radio-medium round metrics (energy/control scalar updates).
+
+
+4.5 Sensor node parameters (`**.sensors[*].*`)
+
+Traffic and signaling:
+- `beaconInterval = 0.1`
+	- Very frequent beaconing (control traffic).
+- `dataInterval = 1.0`
+	- One data generation event per second per active sensor.
+
+Packet sizes:
+- `controlPacketSize = 200` (bits unit used by energy model context)
+- `dataPacketSize = 2000`
+
+Energy model:
+- `initialEnergy = 0.5`
+	- Initial node energy budget.
+- `eElec = 50e-9`
+	- Electronic energy cost per bit.
+- `eFreeSpace = 10e-12`
+	- Amplifier model coefficient (free-space component).
+- `eMultiPath = 0.0013e-12`
+	- Present in config; current C++ path primarily uses free-space term.
+- `idleListeningPower = 1.84e-5`
+	- Configured idle listening parameter.
+
+Radio/capability flags:
+- `range154 = 100`
+	- 802.15.4 communication radius.
+- `enableBeaconing = true`
+- `enableDataGeneration = true`
+- `isBaseStation = false`
+
+
+4.6 Base station parameters (`*.bs.*`)
+- `initialX = -200`
+- `initialY = 500`
+	- BS location is outside the nominal 0..area field on x-axis.
+- `enableBeaconing = false`
+- `enableDataGeneration = false`
+- `isBaseStation = true`
+
+
+4.7 UAV parameters (`*.uav.*`)
+Mobility and link geometry:
+- `minSpeed = 10`
+- `maxSpeed = 10`
+	- Fixed-speed behavior (no speed range variation).
+- `commRadius = 192`
+	- Sensor-UAV communication radius.
+- `uploadRadius = 280`
+	- UAV-to-BS upload region radius.
+
+Timing:
+- `beaconInterval = 5.0`
+- `positionUpdateInterval = 0.5`
+- `uploadInterval = 0.5`
+- `missionPeriod = 280`
+- `missionDuration = -1`
+	- Negative means continuous mission (no forced stop time).
+- `contactWindow = 8.0`
+	- Intended BS-contact phase/window parameter.
+
+
+4.8 TR-LAR routing parameters (`**.routing[*].*`)
+
+Model and logging:
+- `modelFile = ""`
+	- Empty in `General` => no external RL model file loaded.
+- `transitionsFile = "results/transitions.jsonl"`
+	- Routing decisions/outcomes logged as JSON lines.
+
+Queue/candidate controls:
+- `bufferSize = 32`
+- `maxCandidates = 5`
+- `maxRetries = 1`
+- `maxRouteAttempts = 6`
+- `maxHops = 30`
+
+Quality and adaptation thresholds:
+- `minLinkQuality = 0.25`
+- `minNeighborEnergyRatio = 0.05`
+- `adaptationAlpha = 0.2`
+- `queueHighWatermark = 0.8`
+- `congestionPenalty = 0.15`
+- `delayThreshold = 0.25`
+
+Timers:
+- `ackTimeout = 0.6`
+- `neighborTimeout = 5.0`
+- `decisionInterval = 0.02`
+
+
+4.9 Recording settings
+- `**.scalar-recording = true`
+- `**.vector-recording = false`
+	- Scalar statistics are enabled; vector traces are disabled for lighter output.
+
+
+4.10 Output naming and directories
+- `output-scalar-file = ${resultdir}/${configname}-${runnumber}.sca`
+- `output-vector-file = ${resultdir}/${configname}-${runnumber}.vec`
+- `result-dir = results/multi-run/run-${repetition}`
+
+Example in current setup:
+- `results/multi-run/run-0/General-0.sca`
+
+
+5. Derived Configuration: [Config QuickTest]
+
+Definition:
+- `network = src.UavWsnNetwork`
+- `sim-time-limit = 2s`
+- `*.numNodes = 2`
+- `result-dir = results/quick-test`
+
+Purpose:
+- Fast smoke test to verify build/runtime pipeline.
+- Not intended for scientific performance conclusions.
+
+Notes:
+- Does not explicitly `extends = General`; only listed parameters are guaranteed from this block.
+- Used for quick sanity checks and CI-style validation.
+
+
+6. Derived Configuration: [Config OfflineDqnPolicy]
+
+Definition:
+- `extends = General`
+- `**.routing[*].modelFile = "models/offline_qtable.qtab"`
+- `result-dir = results/offline-dqn-policy`
+
+Purpose:
+- Runs the same scenario as `General` but with Q-table policy scoring in routing.
+
+Inheritance behavior:
+- All `General` parameters apply unless overridden here.
+
+
+7. Derived Configuration: [Config OfflineDqnMlp]
+
+Definition:
+- `extends = General`
+- `**.routing[*].modelFile = "models/offline_dqn_policy.mdl"`
+- `result-dir = results/offline-dqn-mlp`
+
+Purpose:
+- Runs the same scenario as `General` but with MLP model scoring in routing.
+
+
+8. Configuration Comparison Summary
+
+General:
+- Baseline scenario
+- No model file
+- Output under `results/multi-run/run-${repetition}`
+
+QuickTest:
+- Minimal topology and 2-second runtime
+- Intended for startup/build validation
+- Output under `results/quick-test`
+
+OfflineDqnPolicy:
+- Same as General + Q-table model
+- Output under `results/offline-dqn-policy`
+
+OfflineDqnMlp:
+- Same as General + MLP model
+- Output under `results/offline-dqn-mlp`
+
+
+9. Practical Execution Examples
+
+Run baseline:
+- `CONFIG_NAME=General scripts/run_simulation.sh -r 0`
+
+Run smoke test:
+- `CONFIG_NAME=QuickTest scripts/run_simulation.sh`
+
+Run Q-table policy:
+- `CONFIG_NAME=OfflineDqnPolicy scripts/run_simulation.sh -r 0`
+
+Run MLP policy:
+- `CONFIG_NAME=OfflineDqnMlp scripts/run_simulation.sh -r 0`
+
+
+10. Interpretation Notes
+- PDR and delay are sensitive to node count (`numNodes`), data generation interval (`dataInterval`), UAV contact behavior (`missionPeriod`, `contactWindow`, `uploadRadius`), and routing queue controls.
+- With `repeat = 1`, outputs represent a single-seed run; use larger repetition counts for robust comparisons.
+- Keep policy comparisons fair by changing only `modelFile` (as already designed in Offline configs).
+
+
+11. File Ownership and Update Rule
+Whenever `omnetpp.ini` changes, this document should be updated to remain synchronized with active simulation semantics.

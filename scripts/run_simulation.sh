@@ -24,17 +24,8 @@ if ! command -v opp_configfilepath >/dev/null 2>&1; then
   exit 1
 fi
 
+INI_FILE="${INI_FILE:-omnetpp.ini}"
 CONFIG_NAME="${CONFIG_NAME:-QuickTest}"
-
-case "$CONFIG_NAME" in
-  QuickTest|OfflineDqnPolicy|OfflineDqnMlp|General)
-    ;;
-  *)
-    echo "Unsupported CONFIG_NAME: $CONFIG_NAME" >&2
-    echo "Allowed values: QuickTest, OfflineDqnPolicy, OfflineDqnMlp, General" >&2
-    exit 1
-    ;;
-esac
 
 cd "$ROOT_DIR"
 
@@ -45,4 +36,9 @@ if [ ! -x "$ROOT_DIR/uav-wsn-rl1" ]; then
   exit 1
 fi
 
-exec "$ROOT_DIR/uav-wsn-rl1" -u Cmdenv -c "$CONFIG_NAME" -n .:src omnetpp.ini "$@"
+if [ ! -f "$ROOT_DIR/$INI_FILE" ]; then
+  echo "INI file not found: $ROOT_DIR/$INI_FILE" >&2
+  exit 1
+fi
+
+exec "$ROOT_DIR/uav-wsn-rl1" -u Cmdenv -c "$CONFIG_NAME" -n .:src "$INI_FILE" "$@"

@@ -1,0 +1,13 @@
+config,metric,n,mean,std,ci95
+Eval_OfflineMlp,failedForwards,400,30.315,21.524265609424695,2.10937802972362
+Eval_OfflineMlp,forwardedPackets,400,368.3175,243.9095659967271,23.903137467679255
+Eval_OfflineMlp,queueDrops,400,4.345,9.43522834035226,0.9246523773545215
+Eval_OfflineMlp,successfulForwards,400,352.915,234.3337973841828,22.964712143649912
+Eval_OfflineMlp,uavCollectedPackets,1,0.0,0.0,0.0
+Eval_OfflineMlp,uavUploadedPackets,1,0.0,0.0,0.0
+Eval_OfflineQTable,failedForwards,400,30.315,21.524265609424695,2.10937802972362
+Eval_OfflineQTable,forwardedPackets,400,368.3175,243.9095659967271,23.903137467679255
+Eval_OfflineQTable,queueDrops,400,4.345,9.43522834035226,0.9246523773545215
+Eval_OfflineQTable,successfulForwards,400,352.915,234.3337973841828,22.964712143649912
+Eval_OfflineQTable,uavCollectedPackets,1,0.0,0.0,0.0
+Eval_OfflineQTable,uavUploadedPackets,1,0.0,0.0,0.0

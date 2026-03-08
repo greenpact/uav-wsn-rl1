@@ -1,0 +1,236 @@
+Procedure: How to Prompt Copilot to Check, Verify, and Validate Every Step
+
+Purpose
+Use this procedure to drive strict, auditable, stepwise validation of the UAV-WSN-RL1 project with explicit evidence at each stage.
+
+Rules for Every Prompt You Send
+1. Ask for one stage at a time (do not batch too much).
+2. Require command execution and concrete outputs.
+3. Require file references and exact paths.
+4. Require pass/fail criteria for each step.
+5. Require a short "what changed" summary after fixes.
+6. Require rerun after each fix to confirm closure.
+
+Standard Prompt Template
+Copy/paste and fill:
+
+"Run validation Stage <N>: <stage-name>.
+Scope:
+- <files or components>
+Checks:
+- <check 1>
+- <check 2>
+Acceptance criteria:
+- <criterion 1>
+- <criterion 2>
+Output format:
+- Commands executed
+- Key outputs
+- Pass/fail per check
+- Files changed (if any)
+- Remaining risks
+If a check fails, fix it and rerun this stage until all checks pass."
+
+
+Validation Stages (Recommended Sequence)
+
+Stage 0: Freeze State and Preconditions
+Prompt to send:
+"Run validation Stage 0: freeze project state and environment.
+Checks:
+- current branch and HEAD commit
+- git status clean/dirty summary
+- python version, OMNeT++ version availability
+Acceptance criteria:
+- branch and commit printed
+- toolchain visibility confirmed
+- blockers listed if any"
+
+Expected evidence:
+- `git branch --show-current`
+- `git rev-parse HEAD`
+- `git status -sb`
+- `python --version`
+- `opp_run -v` (or equivalent)
+
+
+Stage 1: Project Structure Integrity
+Prompt to send:
+"Run validation Stage 1: verify expected folders/files and entry points.
+Checks:
+- source modules, scripts, training files, configs exist
+- no missing key files for run pipeline
+Acceptance criteria:
+- all required files verified with explicit paths"
+
+Required core files:
+- `omnetpp.ini`
+- `src/uavwsn-rl1.ned`
+- `src/SensorNode.cc`
+- `src/RadioMedium.cc`
+- `src/routing/TrlarRouting.cc`
+- `src/routing/RLAgentInterface.cc`
+- `src/uav/UavModule.cc`
+- `scripts/omnetpp_env.sh`
+- `scripts/run_simulation.sh`
+- `scripts/train_offline_policy.sh`
+- `training/train_offline_dqn.py`
+- `training/digital_twin_env.py`
+
+
+Stage 2: Build Validation
+Prompt to send:
+"Run validation Stage 2: build the simulation executable.
+Checks:
+- OMNeT++ env sourced correctly
+- make succeeds
+- executable exists and is runnable
+Acceptance criteria:
+- no build errors
+- executable path confirmed"
+
+Expected evidence:
+- build command output
+- executable presence at `uav-wsn-rl1`
+
+
+Stage 3: Smoke Simulation Validation
+Prompt to send:
+"Run validation Stage 3: execute QuickTest smoke run.
+Checks:
+- run completes without runtime errors
+- result artifacts created
+Acceptance criteria:
+- successful simulation completion
+- quick-test output files present"
+
+Expected outputs:
+- `results/quick-test/*.sca` (and related files)
+- no fatal OMNeT++ runtime errors
+
+
+Stage 4: Single Baseline Run Validation
+Prompt to send:
+"Run validation Stage 4: execute one General run only (run 0).
+Checks:
+- run finishes successfully
+- key CSV outputs generated
+- primary metrics computed
+Acceptance criteria:
+- generated/delivered packets and delay metrics reported"
+
+Expected outputs:
+- `results/multi-run/run-0/General-0.sca`
+- `results/packet_generated.csv`
+- `results/packet_delivered.csv`
+- `results/node_deaths.csv`
+
+Metrics to request explicitly:
+- generated_packets
+- delivered_packets
+- PDR
+- drop_rate
+- mean/median/p95 delay
+- first_node_death
+
+
+Stage 5: Offline Training Validation
+Prompt to send:
+"Run validation Stage 5: offline DQN training validation.
+Checks:
+- training command works (smoke and/or full run)
+- model artifacts created
+- summary JSON contains expected keys
+Acceptance criteria:
+- model files exist and are non-empty"
+
+Expected outputs:
+- `models/offline_qtable.qtab`
+- `models/offline_dqn_policy.mdl`
+- `models/offline_training_summary.json`
+
+
+Stage 6: Policy Inference Config Validation
+Prompt to send:
+"Run validation Stage 6: verify config wiring for policy modes.
+Checks:
+- OfflineDqnPolicy points to qtable model
+- OfflineDqnMlp points to mlp model
+- General has empty model file
+Acceptance criteria:
+- exact lines in `omnetpp.ini` shown and verified"
+
+
+Stage 7: Plot Pipeline Validation
+Prompt to send:
+"Run validation Stage 7: run plotting script and verify output images.
+Checks:
+- plot script executes
+- PNG files generated in results/plots
+Acceptance criteria:
+- packet_flow, delay_histogram, node_deaths plots exist"
+
+Expected outputs:
+- `results/plots/packet_flow.png`
+- `results/plots/delay_histogram.png`
+- `results/plots/node_deaths.png`
+
+
+Stage 8: Scientific Procedure Compliance Check
+Prompt to send:
+"Run validation Stage 8: check compliance with `SCIENTIFIC_EXECUTION_PROCEDURE.txt`.
+Checks:
+- each procedural step marked done/not-done
+- missing steps listed with concrete actions
+Acceptance criteria:
+- a checklist table with status and evidence"
+
+
+Stage 9: Code Review and Risk Review
+Prompt to send:
+"Run validation Stage 9: code review focused on bugs, regressions, and missing tests.
+Output order:
+1) findings by severity with file:line references
+2) open assumptions/questions
+3) concise summary"
+
+
+Stage 10: Final Consolidated Validation Report
+Prompt to send:
+"Run validation Stage 10: produce final report.
+Include:
+- what passed
+- what failed
+- what was fixed
+- what remains risky
+- exact rerun commands for reproduction"
+
+
+How to Handle Failures (Mandatory Loop)
+If any stage fails, always send this follow-up prompt:
+"Fix all failures from Stage <N>, show exact file edits, rerun Stage <N>, and report pass/fail again with evidence."
+
+Only move to next stage after explicit pass.
+
+
+Audit Log Practice (Recommended)
+After each stage, ask:
+"Append a short entry to `notes/SESSION_LOG.md` with stage name, commands run, result, and next action."
+
+This keeps an evidence trail across Codespace restarts.
+
+
+Minimal High-Confidence Prompt Set (Quick Mode)
+If you want a shorter sequence, use only:
+1) Stage 0
+2) Stage 2
+3) Stage 3
+4) Stage 4
+5) Stage 7
+6) Stage 10
+
+
+Operator Notes
+- For fast iteration, run single repetitions (`-r 0`) first.
+- Run larger repetitions only after single-run stability is confirmed.
+- Keep branch and commit hash in every final report for reproducibility.
