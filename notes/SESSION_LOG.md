@@ -46,3 +46,32 @@ Actions Taken:
 
 Open Items:
 - Optionally add a helper prompt/command to append entries faster.
+
+---
+
+Date: 2026-03-08
+Codespace/Context: Offline pipeline implementation and full pilot validation
+Focus: Build, validate, and push publication-grade offline data generation pipeline
+
+Prompts:
+- "retrieve the previous chat session"
+- "prepare a rigorous plan ... parallel offline data pipeline"
+- "include heterogeneous per-episode behavior-policy switching and epsilon=0.25 exploration"
+- "commit and push all changes ... generate full rigorous scenario list"
+- "save/log this chat session"
+
+Decisions:
+- Keep 8D feature schema fixed.
+- Use parallel offline lane with behavior-policy data generation before RL training.
+- Use per-node sharded transition logs to avoid concurrent JSON corruption.
+- Exclude oversized generated manifest artifacts from git history for push reliability.
+
+Actions Taken:
+- Added implementation/code/config/scripts for offline data generation, QA, training-from-dataset, and eval stats.
+- Created `training/FULL_SCALE_SCENARIO_CATALOG.txt`.
+- Saved detailed day log in `notes/CHAT_CONVERSATION_LOG_2026-03-08.txt`.
+- Verified and pushed commit `b6c6616b` to `origin/uav-wsn-rl1-b1`.
+
+Open Items:
+- Run full-scale collection campaign (e.g., 30-100 seeds per target scenario family).
+- Produce final publication tables from full-scale manifests and eval stats.

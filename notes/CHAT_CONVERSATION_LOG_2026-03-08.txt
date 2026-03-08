@@ -1,0 +1,106 @@
+CHAT CONVERSATION LOG
+Date: 2026-03-08
+Repository: greenpact/uav-wsn-rl1
+Branch: uav-wsn-rl1-b1
+Workspace: /workspaces/uav-wsn-rl1
+
+====================================================================
+SESSION HISTORY (chronological summary)
+====================================================================
+
+1) Chat persistence and retrieval
+- Restored previous Copilot chat session resources.
+- Ran forced merge recovery:
+  - `bash scripts/restore_copilot_chat_session.sh --force`
+- Verified active session resource directory contains restored session data.
+
+2) Viability analysis recall
+- Retrieved and summarized prior conclusions about OMNeT++ feasibility as offline data source.
+- Key conclusion recalled:
+  - Engineering feasibility: GO.
+  - Publication-grade claim (as-is): NO-GO until data contract and schema rigor enforced.
+
+3) Parallel offline pipeline planning
+- Produced rigorous end-to-end plan for independent parallel offline data generation pipeline.
+- Plan covered:
+  - architecture separation (existing path vs dataset generation vs frozen eval),
+  - forwarding/mobility mechanisms before RL training,
+  - transition schema and metadata,
+  - QA and statistical requirements.
+
+4) Documentation generation and refinement
+- Created:
+  - `training/PARALLEL_OFFLINE_PIPELINE_IMPLEMENTATION_PLAN.txt`
+- Updated:
+  - `training/data-gen-model-description.txt`
+- Added explicit operational clarification sections:
+  - forwarding model,
+  - single/multi-hop behavior,
+  - UAV mobility,
+  - full packet timing chain.
+
+5) Behavior-policy model improvements requested by user
+- Added heterogeneous per-episode policy switching.
+- Added explicit high-exploration episodes (`epsilon=0.25`) to reduce utility bias.
+- Added concrete implementation delta and QA checks.
+
+6) Full implementation in code/config/scripts
+Implemented and validated pipeline components including:
+- `omnetpp_offline.ini`
+- `src/routing/TrlarRouting.cc`
+- `src/routing/TrlarRouting.h`
+- `src/uavwsn-rl1.ned`
+- `scripts/run_offline_dataset_collection.sh`
+- `training/build_offline_dataset.py`
+- `training/train_offline_dqn_from_dataset.py`
+- `training/analyze_offline_eval_stats.py`
+
+7) Reliability fixes during validation
+- Transition log corruption fix:
+  - switched to per-node transition sharding (`transitions-node<id>.jsonl`) to avoid concurrent append corruption.
+- Metadata enrichment:
+  - added mobility/config/schema/reproducibility fields.
+- Dataset QA ingestion updates:
+  - prioritized sharded files,
+  - compatibility aliases for fields.
+
+8) Pilot execution performed
+- Ran pilot offline collection across three configs (short sim-time smoke, multiple repetitions).
+- Built dataset manifests and passed QA for:
+  - behavior-utility,
+  - behavior-stochastic,
+  - ablation-no-uav.
+- Ran dataset-only offline training smoke from collected data.
+- Ran frozen-policy eval smokes and generated stats outputs.
+
+9) Full-scale scenario catalog requested
+- Created publication-oriented scenario matrix:
+  - `training/FULL_SCALE_SCENARIO_CATALOG.txt`
+- Included source-grounded recommendations and acceptance gates.
+
+10) Commit and push
+- Committed implementation and documentation updates.
+- Initial push failed due GitHub hard file-size limits from generated large manifests.
+- Reworked commit to exclude oversized generated train manifests; added `.gitignore` rule.
+- Final push succeeded to `origin/uav-wsn-rl1-b1`.
+- Latest pushed commit at time of logging:
+  - `b6c6616b`
+
+====================================================================
+RETRIEVAL POINTERS
+====================================================================
+
+Primary session logs:
+- `notes/CHAT_CONVERSATION_LOG_2026-03-08.txt`
+- `notes/SESSION_LOG.md`
+
+Chat persistence helper (workspace storage recovery):
+- `scripts/restore_copilot_chat_session.sh`
+- Force mode if needed:
+  - `bash scripts/restore_copilot_chat_session.sh --force`
+
+Quick instruction to restore later:
+1. Open this repo.
+2. Run: `bash scripts/restore_copilot_chat_session.sh --force`
+3. Open Copilot Chat history in VS Code.
+4. If needed, read this file for exact work summary and decisions.
